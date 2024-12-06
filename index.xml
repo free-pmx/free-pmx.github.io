@@ -1,0 +1,701 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>free-pmx – Free software &amp; Proxmox</title><link>https://free-pmx.github.io/</link><description>Recent content in Free software &amp; Proxmox on free-pmx</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 05 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://free-pmx.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>The lesser known quorum options</title><link>https://free-pmx.github.io/insights/the-lesser-known-quorum-options/</link><pubDate>Sun, 01 Dec 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/the-lesser-known-quorum-options/</guid><description>
+&lt;p>Proxmox do not really cater much for cluster deployments at a small scale of 2-4 nodes and always assume High Availability could be put to use in their approach to the out-of-the-box configuration. It is very likely for this reason that some great features of &lt;em>Corosync&lt;/em> configuration &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> are left out of the official documentation entirely.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> You might want to read more on how Proxmox utlise Corosync in a separate &lt;a href="https://free-pmx.github.io/insights/the-proxmox-corosync-fallacy/" >post&lt;/a>.&lt;/p>
+&lt;/blockquote>
+&lt;h2>Quorum provider service&lt;span class="hx-absolute -hx-mt-20" id="quorum-provider-service">&lt;/span>
+&lt;a href="#quorum-provider-service" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Proxmox need a quorum provider service &lt;code>votequorum&lt;/code> &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> to prevent data corruption in situations when two or more partitions were to form in a cluster of which a member would be about to modify the same data unchecked by the (from the viewpoint of the modifying member) missing members (of a detached partition). This is signified by the always populated &lt;code>corosync.conf&lt;/code> section:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>quorum {
+provider: corosync_votequorum
+}&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Other &lt;code>key: value&lt;/code> pairs could be specified here. One of the notable values of importance is &lt;code>expected_votes&lt;/code>, in standard PVE deployment not explicit:&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;code>votequorum&lt;/code> requires an &lt;code>expected_votes&lt;/code> value to function, this can be provided in two ways. The number of expected votes will be automatically calculated when the &lt;code>nodelist { }&lt;/code> section is present in &lt;code>corosync.conf&lt;/code> or &lt;code>expected_votes&lt;/code> can be specified in the &lt;code>quorum { }&lt;/code> section.&lt;/p>
+&lt;/blockquote>
+&lt;p>The &lt;em>quorum&lt;/em> value is then calculated as majority out of the sum of &lt;code>nodelist { node { quorum_votes: } }&lt;/code> values. You can see the live calculated value on any node: &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup>&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>corosync-quorumtool
+---8&amp;lt;---
+Votequorum information
+----------------------
+Expected votes: 4
+Highest expected: 4
+Total votes: 4
+Quorum: 3
+Flags: Quorate
+---8&amp;lt;---&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> The Proxmox-specific tooling &lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup> makes use of this output as well with &lt;code>pve status&lt;/code>. It is also this value you are temporarily changing with &lt;code>pvecm expected&lt;/code> which actually makes use of &lt;code>corosync-quorumtool -e&lt;/code>.&lt;/p>
+&lt;/blockquote>
+&lt;h2>The options&lt;span class="hx-absolute -hx-mt-20" id="the-options">&lt;/span>
+&lt;a href="#the-options" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>These can be added to the &lt;code>quorum {}&lt;/code> section:&lt;/p>
+&lt;h3>The two-node cluster&lt;span class="hx-absolute -hx-mt-20" id="the-two-node-cluster">&lt;/span>
+&lt;a href="#the-two-node-cluster" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>The option &lt;code>two_node: 1&lt;/code> is meant for clusters made up of 2 nodes, it causes each node to assume it is in the quorum ever after successfully booting up and having seeing the other node at least once. This has quite some merit considering that a disappearing node could be considered having gone down and it is therefore safe to continue operating on its own. If you run this simple cluster setup, your remaining node does not have to lose quorum when the other one is down.&lt;/p>
+&lt;h3>Auto tie-breaker&lt;span class="hx-absolute -hx-mt-20" id="auto-tie-breaker">&lt;/span>
+&lt;a href="#auto-tie-breaker" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>The option &lt;code>auto_tie_breaker: 1&lt;/code> (ATB) allows two equally size partitions to decide which one retains quorum deterministically, having e.g. a 4-node cluster split into two 2-node partitions would not allow either to become quorate, but ATB allows one of these to be picked as quorate, by default the one with the lowest &lt;code>nodeid&lt;/code> in the partition. This can be tweaked with tunable &lt;code>auto_tie_breaker_node: lowest|highest|&amp;lt;list of node IDs&amp;gt;&lt;/code>.&lt;/p>
+&lt;p>This could be also your go-to option in case you are running a 2-node cluster with one of the nodes in a &amp;ldquo;master&amp;rdquo; role and the other one almost invariably off.&lt;/p>
+&lt;h3>Last man standing&lt;span class="hx-absolute -hx-mt-20" id="last-man-standing">&lt;/span>
+&lt;a href="#last-man-standing" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>The option &lt;code>last_man_standing: 1&lt;/code> (LMS) allows to dynamically adapt to scenarios when nodes go down for prolonged periods by recalculating the &lt;code>expected_votes&lt;/code> value. In a 10-node cluster where e.g. 3 nodes have not been seen for longer than a specified period (by default 10 seconds - tunable option &lt;code>last_man_standing_window&lt;/code> in milliseconds), the new &lt;code>expected_votes&lt;/code> value becomes 7. This can cascade down to as few as 2 nodes left being quorate. If you also enable ATB, it could go to even just down to a single node.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;em>&lt;strong>IMPORTANT&lt;/strong>&lt;/em> This option should not be used in HA clusters as implemented by Proxmox.&lt;/p>
+&lt;/blockquote>
+&lt;h2>Notes&lt;span class="hx-absolute -hx-mt-20" id="notes">&lt;/span>
+&lt;a href="#notes" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>If you are also looking how to safely disable HA on a Proxmox cluster, there is a &lt;a href="https://free-pmx.github.io/guides/how-to-disable-ha-permanently/" >guide&lt;/a>.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/corosync.conf.5.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/corosync.conf.5.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/votequorum.5.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/votequorum.5.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/corosync-quorumtool.8.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/corosync-quorumtool.8.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a href="https://pve.proxmox.com/pve-docs/pvecm.1.html" target="_blank" rel="noopener">https://pve.proxmox.com/pve-docs/pvecm.1.html&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>The Proxmox time bomb watchdog</title><link>https://free-pmx.github.io/insights/the-proxmox-time-bomb-watchdog/</link><pubDate>Thu, 21 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/the-proxmox-time-bomb-watchdog/</guid><description>
+&lt;p>The title of this post is inspired by the very statement of &amp;ldquo;[watchdogs] are like a loaded gun&amp;rdquo; from Proxmox wiki. &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> Proxmox include one such &lt;em>active-by-default&lt;/em> tool on every single node anyway. There&amp;rsquo;s further misinformation, including on official forums, when watchdogs are &amp;ldquo;disarmed&amp;rdquo; and it is thus impossible to e.g. isolate genuine non-software related reboots. Design flaws might get your node auto-reboot with no indication in the GUI. The CLI part is undocumented as is reliably disabling this feature.&lt;/p>
+&lt;h2>Always ticking&lt;span class="hx-absolute -hx-mt-20" id="always-ticking">&lt;/span>
+&lt;a href="#always-ticking" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Auto-reboots are often associated with &lt;em>High Availability&lt;/em> (HA), &lt;sup id="fnref1:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> but in fact, every fresh Proxmox VE (PVE) install, unlike Debian, comes with an obscure setup out of the box, set at boot time and ready to be triggered at any point - it does NOT matter if you make use of HA or not.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> There are different kinds of watchdog mechanisms other than the one covered by this post, e.g. kernel NMI watchdog, &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> Corosync watchdog, &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup> etc. The subject of this post is merely the Proxmox multiplexer-based implementation that the HA stack relies on.&lt;/p>
+&lt;/blockquote>
+&lt;h2>Watchdogs&lt;span class="hx-absolute -hx-mt-20" id="watchdogs">&lt;/span>
+&lt;a href="#watchdogs" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>In terms of computer systems, &lt;em>watchdogs&lt;/em> ensure that things either work well or the system at least attempts to self-recover into a state which retains overall integrity after a malfunction. No watchdog would be needed for a system that can be attended in due time, but some additional mechanism is required to avoid collisions for automated recovery systems which need to make certain assumptions.&lt;/p>
+&lt;p>The watchdog employed by PVE is based on a &lt;em>timer&lt;/em> - one that has a fixed initial countdown value set and once activated, a &lt;em>handler&lt;/em> needs to constantly attend it by resetting it back to the initial value, so that it does NOT go off. In a twist, it is the timer making sure that the handler is all alive and well attending it, not the other way around.&lt;/p>
+&lt;p>The timer itself is accessed via a &lt;em>watchdog device&lt;/em> and is a feature supported by Linux kernel &lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup> - it could be an independent hardware component on some systems or entirely software-based, such as &lt;code>softdog&lt;/code> &lt;sup id="fnref:5">&lt;a href="#fn:5" class="footnote-ref" role="doc-noteref">5&lt;/a>&lt;/sup> - that Proxmox default to when otherwise left unconfigured.&lt;/p>
+&lt;p>When available, you will find &lt;code>/dev/watchdog&lt;/code> on your system. You can also inquire about its handler:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>lsof +c12 /dev/watchdog&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME
+watchdog-mux 484190 root 3w CHR 10,130 0t0 686 /dev/watchdog&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>And more details:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>wdctl /dev/watchdog0 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>Device: /dev/watchdog0
+Identity: Software Watchdog [version 0]
+Timeout: 10 seconds
+Pre-timeout: 0 seconds
+Pre-timeout governor: noop
+Available pre-timeout governors: noop&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>The bespoke PVE process is rather timid with logging:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>journalctl -b -o cat -u watchdog-mux&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>Started watchdog-mux.service - Proxmox VE watchdog multiplexer.
+Watchdog driver &amp;#39;Software Watchdog&amp;#39;, version 0&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>But you can check how it is attending the device, every second:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>strace -r -e ioctl -p &lt;span style="color:#66d9ef">$(&lt;/span>pidof watchdog-mux&lt;span style="color:#66d9ef">)&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>strace: Process 484190 attached
+0.000000 ioctl(3, WDIOC_KEEPALIVE) = 0
+1.001639 ioctl(3, WDIOC_KEEPALIVE) = 0
+1.001690 ioctl(3, WDIOC_KEEPALIVE) = 0
+1.001626 ioctl(3, WDIOC_KEEPALIVE) = 0
+1.001629 ioctl(3, WDIOC_KEEPALIVE) = 0&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>If the handler stops resetting the timer, your system WILL undergo an emergency reboot. Killing the &lt;code>watchdog-mux&lt;/code> process would give you exactly that outcome within 10 seconds.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> If you stop the handler correctly, it should gracefully stop the timer. However the device is still available, a simple &lt;code>touch&lt;/code> will get you a reboot.&lt;/p>
+&lt;/blockquote>
+&lt;h2>The multiplexer&lt;span class="hx-absolute -hx-mt-20" id="the-multiplexer">&lt;/span>
+&lt;a href="#the-multiplexer" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The obscure &lt;code>watchdog-mux&lt;/code> service is a Proxmox construct of a multiplexer - a component that combines inputs from other sources to proxy to the actual watchdog device. You can confirm it being part of the HA stack:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>dpkg-query -S &lt;span style="color:#66d9ef">$(&lt;/span>which watchdog-mux&lt;span style="color:#66d9ef">)&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>pve-ha-manager: /usr/sbin/watchdog-mux&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>The primary purpose of the service, apart from attending the watchdog device (and keeping your node from rebooting), is to listen on a socket to its so-called clients - these are the better known services of &lt;code>pve-ha-crm&lt;/code> and &lt;code>pve-ha-lrm&lt;/code>. The multiplexer signifies there are clients connected to it by creating a directory &lt;code>/run/watchdog-mux.active/&lt;/code>, but this is rather confusing as the &lt;code>watchdog-mux&lt;/code> service itself is ALWAYS active.&lt;/p>
+&lt;p>While the multiplexer is supposed to handle the watchdog device (at ALL times), it is itself handled by the clients (if the are any active). The actual mechanisms behind the HA and its fencing &lt;sup id="fnref:6">&lt;a href="#fn:6" class="footnote-ref" role="doc-noteref">6&lt;/a>&lt;/sup> are out of scope for this post, but it is important to understand that none of the components of HA stack can be removed, even if unused:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>apt remove -s -o Debug::pkgProblemResolver&lt;span style="color:#f92672">=&lt;/span>true pve-ha-manager&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+Starting pkgProblemResolver with broken count: 3
+Starting 2 pkgProblemResolver with broken count: 3
+Investigating (0) qemu-server:amd64 &amp;lt; 8.2.7 @ii K Ib &amp;gt;
+Broken qemu-server:amd64 Depends on pve-ha-manager:amd64 &amp;lt; 4.0.6 @ii pR &amp;gt; (&amp;gt;= 3.0-9)
+Considering pve-ha-manager:amd64 10001 as a solution to qemu-server:amd64 3
+Removing qemu-server:amd64 rather than change pve-ha-manager:amd64
+Investigating (0) pve-container:amd64 &amp;lt; 5.2.2 @ii K Ib &amp;gt;
+Broken pve-container:amd64 Depends on pve-ha-manager:amd64 &amp;lt; 4.0.6 @ii pR &amp;gt; (&amp;gt;= 3.0-9)
+Considering pve-ha-manager:amd64 10001 as a solution to pve-container:amd64 2
+Removing pve-container:amd64 rather than change pve-ha-manager:amd64
+Investigating (0) pve-manager:amd64 &amp;lt; 8.2.10 @ii K Ib &amp;gt;
+Broken pve-manager:amd64 Depends on pve-container:amd64 &amp;lt; 5.2.2 @ii R &amp;gt; (&amp;gt;= 5.1.11)
+Considering pve-container:amd64 2 as a solution to pve-manager:amd64 1
+Removing pve-manager:amd64 rather than change pve-container:amd64
+Investigating (0) proxmox-ve:amd64 &amp;lt; 8.2.0 @ii K Ib &amp;gt;
+Broken proxmox-ve:amd64 Depends on pve-manager:amd64 &amp;lt; 8.2.10 @ii R &amp;gt; (&amp;gt;= 8.0.4)
+Considering pve-manager:amd64 1 as a solution to proxmox-ve:amd64 0
+Removing proxmox-ve:amd64 rather than change pve-manager:amd64&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Considering the PVE stack is so inter-dependent with its components, they can&amp;rsquo;t be removed or disabled safely without taking extra precautions.&lt;/p>
+&lt;h2>How to get rid of the auto-reboot&lt;span class="hx-absolute -hx-mt-20" id="how-to-get-rid-of-the-auto-reboot">&lt;/span>
+&lt;a href="#how-to-get-rid-of-the-auto-reboot" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>You can find two separate snippets on how to reliably put the feature out of action here, depending on whether you are looking for
+a &lt;a href="https://free-pmx.github.io/guides/how-to-disable-ha-for-maintenance/" >temporary&lt;/a>
+or &lt;a href="https://free-pmx.github.io/guides/how-to-disable-ha-permanently/" >lasting&lt;/a>
+solution.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/High_Availability" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/High_Availability&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&amp;#160;&lt;a href="#fnref1:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://www.kernel.org/doc/Documentation/lockup-watchdogs.txt" target="_blank" rel="noopener">https://www.kernel.org/doc/Documentation/lockup-watchdogs.txt&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/corosync.conf.5.en.html#watchdog_device" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/corosync.conf.5.en.html#watchdog_device&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a href="https://www.kernel.org/doc/html/latest/watchdog/" target="_blank" rel="noopener">https://www.kernel.org/doc/html/latest/watchdog/&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:5">
+&lt;p>&lt;a href="https://github.com/torvalds/linux/blob/master/drivers/watchdog/softdog.c" target="_blank" rel="noopener">https://github.com/torvalds/linux/blob/master/drivers/watchdog/softdog.c&lt;/a>&amp;#160;&lt;a href="#fnref:5" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:6">
+&lt;p>&lt;a href="https://pve.proxmox.com/pve-docs/chapter-ha-manager.html#ha_manager_fencing" target="_blank" rel="noopener">https://pve.proxmox.com/pve-docs/chapter-ha-manager.html#ha_manager_fencing&lt;/a>&amp;#160;&lt;a href="#fnref:6" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>The Proxmox Corosync fallacy</title><link>https://free-pmx.github.io/insights/the-proxmox-corosync-fallacy/</link><pubDate>Sat, 16 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/the-proxmox-corosync-fallacy/</guid><description>
+&lt;p>Unlike some other systems, Proxmox VE does not rely on a fixed master to keep consistency in a group (cluster). The &lt;em>quorum&lt;/em> concept of distributed computing is used to keep the hosts (nodes) &amp;ldquo;on the same page&amp;rdquo; when it comes to cluster operations. The very word denotes a select group - this has some advantages in terms of resiliency of such systems.&lt;/p>
+&lt;h2>The quorum sideshow&lt;span class="hx-absolute -hx-mt-20" id="the-quorum-sideshow">&lt;/span>
+&lt;a href="#the-quorum-sideshow" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Is a virtual machine (guest) starting up somewhere? Only one node is allowed to spin it up at any given time and while it is running, it can&amp;rsquo;t start elsewhere - such occurrence could result in corruption of shared resources, such as storage, as well as other ill-effects to the users.&lt;/p>
+&lt;p>The nodes have to go by the same shared &amp;ldquo;book&amp;rdquo; at any given moment. If some nodes lose sight of other nodes, it is important that there&amp;rsquo;s only one such book. Since there&amp;rsquo;s no master, it is important to know who has the right book and what to obide even without such book. In its simplest form - albeit there are others - it&amp;rsquo;s the book of the majority that matters. If a node is out of this majority, it is out of quorum.&lt;/p>
+&lt;h2>The state machine&lt;span class="hx-absolute -hx-mt-20" id="the-state-machine">&lt;/span>
+&lt;a href="#the-state-machine" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The book is the single source of truth for any &lt;em>quorate&lt;/em> node (one that is in the quorum) - in technical parlance, this truth describes what is called a &lt;em>state&lt;/em> - of the configuration of everything in the cluster. Nodes that are part of the quorum can participate on changing the state. The state is nothing more than the set of configuration files and their changes - triggered by inputs from the operator - are considered transitions between the states. This whole behaviour of state transitions being subject to inputs is what defines a &lt;em>state machine&lt;/em>.&lt;/p>
+&lt;h2>Proxmox Cluster File System (pmxcfs)&lt;span class="hx-absolute -hx-mt-20" id="proxmox-cluster-file-system-pmxcfs">&lt;/span>
+&lt;a href="#proxmox-cluster-file-system-pmxcfs" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The view of the state, i.e. current cluster configuration, is provided via a virtual filesystem loosely following the &amp;ldquo;everything is a file&amp;rdquo; concept of UNIX. This is where the in-house &lt;em>pmxcfs&lt;/em> &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> mounts across all nodes into &lt;code>/etc/pve&lt;/code> - it is important that it is NOT a local directory, but a mounted in-memory filesystem. Generally, transition of the state needs to get approved by the quorum first, so pmxcfs should not allow such configuration changes that would break consistency in the cluster. It is up to the bespoke implementation which changes are allowed and which not.&lt;/p>
+&lt;h2>Inquorate&lt;span class="hx-absolute -hx-mt-20" id="inquorate">&lt;/span>
+&lt;a href="#inquorate" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>A node out of quorum (having become &lt;em>inquorate&lt;/em>) lost sight of the cluster-wide state, so it also lost the ability to write into it. Furthermore, it is not allowed to make autonomous decisions of its own that could jeopardise others and has this ingrained in its primordial code. If there are running guests, they will stay running. If you manually stop them, this will be allowed, but no new ones can be started and the previously &amp;ldquo;locally&amp;rdquo; stopped guest can&amp;rsquo;t be started up again - not even on another node, that is, not without manual intervention. This is all because any such changes would need to be recorded into the state to be safe, before which they would need to get approved by the entire quorum, which, for an inquorate node, is impossible.&lt;/p>
+&lt;h2>Consistency&lt;span class="hx-absolute -hx-mt-20" id="consistency">&lt;/span>
+&lt;a href="#consistency" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Nodes in quorum will see the last known state of all nodes &lt;em>uniformly&lt;/em>, including of the nodes that are not in quorum at the moment. In fact, they rely on the default behaviour of inquorate nodes that makes them &amp;ldquo;stay where they were&amp;rdquo; or at worst, gracefully make such changes to their state that could not cause any configuration conflict upon rejoining the quorum. This is the reason why it is impossible (without overriding manual effort) to e.g. start a guest that was last seen up and running on since-then inquorate node.&lt;/p>
+&lt;h2>Closed Process Group and Extended Virtual Synchrony&lt;span class="hx-absolute -hx-mt-20" id="closed-process-group-and-extended-virtual-synchrony">&lt;/span>
+&lt;a href="#closed-process-group-and-extended-virtual-synchrony" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Once the state machine operates over distributed set of nodes, it falls into the category of so-called &lt;em>closed process group&lt;/em> (CPG). The group members (nodes) are the &lt;em>processors&lt;/em> and they need to be constantly messaging each other about any transitions they wish to make. This is much more complex than it would initially appear because of the guarantees needed, e.g. any change on any node would need to be communicated to all others in exactly the same order or if undeliverable to any of them, delivered to none of them.&lt;/p>
+&lt;p>Only if all of the nodes see all the same changes in the same order, it is possible to rely on their actions being consistent with the cluster. But there&amp;rsquo;s one more case to take care of which can wreak havoc - fragmentation. In case of CPG splitting into multiple components, it is important that only one (primary) component continues operating, while others (in non-primary component(s)) do not, however they should safely reconnect and catch-up with the primary component once possible.&lt;/p>
+&lt;p>The above including the last requirement describes the guarantees provided by the so-called &lt;em>Extended Virtual Synchrony&lt;/em> (EVS) model.&lt;/p>
+&lt;h2>Corosync Cluster Engine&lt;span class="hx-absolute -hx-mt-20" id="corosync-cluster-engine">&lt;/span>
+&lt;a href="#corosync-cluster-engine" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>None of the above-mentioned is in any way special with Proxmox, in fact an open source component Corosync &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> was chosen to provide the necessary piece into the implementation stack. Some confusion might arise about what Proxmox make use of from the provided features.&lt;/p>
+&lt;p>&lt;em>The CPG communication suite with EVS guarantees and quorum system notifications are utilised, however others are NOT.&lt;/em>&lt;/p>
+&lt;p>Corosync is providing the necessary intra-cluster messaging, its authentication and encryption, support for redundancy and completely abstracts all the associated issues to the developer using the library. Unlike e.g. Pacemaker &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup>, Proxmox do NOT use Corosync to support their own &lt;em>High-Availability&lt;/em> (HA) &lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup> implementation other than by sensing loss-of-quorum situations.&lt;/p>
+&lt;h2>The takeaway&lt;span class="hx-absolute -hx-mt-20" id="the-takeaway">&lt;/span>
+&lt;a href="#the-takeaway" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Consequently, on single-node installs, the service of Corosync is not even running and pmxcfs runs in so-called local mode - no messages need to be sent to any other nodes. Some Proxmox tooling acts as mere wrapper around Corosync CLI facilities,&lt;br>
+&lt;br>
+e.g. &lt;code>pvecm status&lt;/code> &lt;sup id="fnref:5">&lt;a href="#fn:5" class="footnote-ref" role="doc-noteref">5&lt;/a>&lt;/sup> wraps in &lt;code>corosync-quorumtool -siH&lt;/code> &lt;sup id="fnref:6">&lt;a href="#fn:6" class="footnote-ref" role="doc-noteref">6&lt;/a>&lt;/sup>&lt;br>
+&lt;br>
+and you can use lots of Corosync tooling and configuration options independently of Proxmox whether they decide to &amp;ldquo;support&amp;rdquo; it or not.&lt;/p>
+&lt;p>&lt;em>This is also where any connections to the open source library end - any issues with inability to mount pmxcfs, having its mount turn read-only or (not only) HA induced reboots have nothing to do with Corosync.&lt;/em>&lt;/p>
+&lt;p>In fact, e.g. inability to recover fragmented clusters is more likely &lt;em>caused by Proxmox stack due its reliance on Corosync distributing configuration changes of Corosync itself&lt;/em> - a design decision that costs many headaches of:&lt;/p>
+&lt;ul>
+&lt;li>mismatching &lt;code>/etc/corosync/corosync.conf&lt;/code> - the actual configuration file; and&lt;/li>
+&lt;li>&lt;code>/etc/pve/corosync.conf&lt;/code> - the counter-intuitive cluster-wide version&lt;/li>
+&lt;/ul>
+&lt;p>that is meant to be auto-distributed on edits, entirely invented by Proxmox and further requires elaborate method of editing it. &lt;sup id="fnref:7">&lt;a href="#fn:7" class="footnote-ref" role="doc-noteref">7&lt;/a>&lt;/sup>&lt;/p>
+&lt;p>&lt;em>Corosync is simply used for intra-cluster communication, keeping the configurations in sync or indicating to the nodes when inquorate, it does not decide anything beyond that and it certainly was never meant to trigger any reboots.&lt;/em>&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_%28pmxcfs%29" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_(pmxcfs)&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://github.com/corosync/corosync" target="_blank" rel="noopener">https://github.com/corosync/corosync&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://github.com/ClusterLabs/pacemaker" target="_blank" rel="noopener">https://github.com/ClusterLabs/pacemaker&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/High_Availability" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/High_Availability&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:5">
+&lt;p>&lt;a href="https://pve.proxmox.com/pve-docs/pvecm.1.html" target="_blank" rel="noopener">https://pve.proxmox.com/pve-docs/pvecm.1.html&lt;/a>&amp;#160;&lt;a href="#fnref:5" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:6">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/corosync-quorumtool.8.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/corosync-quorumtool.8.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:6" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:7">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/Cluster_Manager#_corosync_configuration" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/Cluster_Manager#_corosync_configuration&lt;/a>&amp;#160;&lt;a href="#fnref:7" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>The improved SSH with regressions</title><link>https://free-pmx.github.io/insights/the-improved-ssh-with-regressions/</link><pubDate>Sun, 10 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/the-improved-ssh-with-regressions/</guid><description>
+&lt;p>If you pop into the release notes of PVE 8.2, &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> there&amp;rsquo;s a humble note on changes to SSH behaviour under &lt;em>Improved management for Proxmox VE clusters&lt;/em>:&lt;/p>
+&lt;blockquote>
+&lt;p>Modernize handling of host keys for SSH connections between cluster nodes ([bugreport] 4886).&lt;/p>
+&lt;p>Previously, /etc/ssh/ssh_known_hosts was a symlink to a shared file containing all node hostkeys.
+This could cause problems if conflicting hostkeys appeared in /root/.ssh/known_hosts, for example after re-joining a node to the cluster under its old name.
+Now, each node advertises its own host key over the cluster filesystem. When Proxmox VE initiates an SSH connection from one node to another, it pins the advertised host key.
+For existing clusters, pvecm updatecerts can optionally unmerge the existing /etc/ssh/ssh_known_hosts.&lt;/p>
+&lt;/blockquote>
+&lt;h2>The original bug&lt;span class="hx-absolute -hx-mt-20" id="the-original-bug">&lt;/span>
+&lt;a href="#the-original-bug" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>This is a complete rewrite - of a piece that has been causing endless symptoms since over 10 years &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> manifesting as inexplicable:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
+Offending RSA key in /etc/ssh/ssh_known_hosts&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>This was particularly bad as it concerned &lt;code>pvecm updatecerts&lt;/code> &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup> - the very tool that was supposed to remedy these kinds of situations.&lt;/p>
+&lt;h2>The irrational rationale&lt;span class="hx-absolute -hx-mt-20" id="the-irrational-rationale">&lt;/span>
+&lt;a href="#the-irrational-rationale" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>First, there&amp;rsquo;s the general misinterpretation on how SSH works:&lt;/p>
+&lt;blockquote>
+&lt;p>problems if conflicting hostkeys appeared in /root/.ssh/known_hosts, for example after re-joining a node to the cluster under its old name.&lt;/p>
+&lt;/blockquote>
+&lt;p>&lt;em>Let&amp;rsquo;s establish that the general SSH behaviour is to accept ALL of the possible multiple host keys&lt;/em> that it recognizes for a given host when verifying its identity. &lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup> There&amp;rsquo;s never any issue in having multiple records in &lt;code>known_hosts&lt;/code>, in whichever location, that are &amp;ldquo;conflicting&amp;rdquo; - if ANY of them matches, it WILL connect.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> And one machine, in fact, has multiple host keys that it can present, e.g. RSA and ED25519-based ones.&lt;/p>
+&lt;/blockquote>
+&lt;h2>What was actually fixed&lt;span class="hx-absolute -hx-mt-20" id="what-was-actually-fixed">&lt;/span>
+&lt;a href="#what-was-actually-fixed" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The actual problem at hand was that PVE used to tailor the use of what would be system-wide (not user specific) &lt;code>/etc/ssh/ssh_known_hosts&lt;/code> by making it into a symlink pointing into &lt;code>/etc/pve/priv/known_hosts&lt;/code> - which was shared across the cluster nodes. Within this architecture, it was necessary to be merging any changes from any node performed on this file and in the effort of pruning it - to avoid growing it too large - it was mistakenly removing newly added entries for the same host, i.e. if host was reinstalled with same name, its new host key could never make it to be recognised by the cluster.&lt;/p>
+&lt;p>Because there were additional issues associated with this, e.g. running &lt;code>ssh-keygen -R&lt;/code> would remove such symlink, eventually, instead of fixing the merging, a new approach was chosen.&lt;/p>
+&lt;h2>What has changed&lt;span class="hx-absolute -hx-mt-20" id="what-has-changed">&lt;/span>
+&lt;a href="#what-has-changed" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The new implementation does not rely on shared &lt;code>known_hosts&lt;/code> anymore, in fact it does not even use the local system or user locations to look up the host key to verify. It makes a new entry with a single host key into &lt;code>/etc/pve/local/ssh_known_hosts&lt;/code> which then appears in &lt;code>/etc/pve/&amp;lt;nodename&amp;gt;/&lt;/code> for each respective node and then &lt;em>overrides SSH parameters&lt;/em> during invocation from other nodes with:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>-o UserKnownHosts=&amp;#34;/etc/pve/&amp;lt;nodename&amp;gt;/ssh_known_hosts&amp;#34; -o GlobalKnownHosts=none&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>So this is NOT how you would be typically running your own &lt;code>ssh&lt;/code> sessions, therefore you will experience different behaviour in CLI than before.&lt;/p>
+&lt;h2>What was not fixed&lt;span class="hx-absolute -hx-mt-20" id="what-was-not-fixed">&lt;/span>
+&lt;a href="#what-was-not-fixed" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The linking and merging of shared &lt;code>ssh_known_hosts&lt;/code>, if still present, is happening with the original bug - despite trivial to fix, regression-free. The not fixed part is the merging, i.e. it will still be &lt;em>silently dropping out your new keys.&lt;/em> Do not rely on it.&lt;/p>
+&lt;h2>Regressions&lt;span class="hx-absolute -hx-mt-20" id="regressions">&lt;/span>
+&lt;a href="#regressions" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>There&amp;rsquo;s some strange behaviours left behind. First of all, even if you create a new cluster from scratch on v8.2, the initiating node will have the symlink created, but none of the subsequently joined nodes will be added there and will not have those symlinks anymore.&lt;/p>
+&lt;p>Then there was the QDevice setup issue, &lt;sup id="fnref:5">&lt;a href="#fn:5" class="footnote-ref" role="doc-noteref">5&lt;/a>&lt;/sup> discovered only by a user, since fixed.&lt;/p>
+&lt;p>Lately, there was the LXC console relaying issue, &lt;sup id="fnref:6">&lt;a href="#fn:6" class="footnote-ref" role="doc-noteref">6&lt;/a>&lt;/sup> also user reported.&lt;/p>
+&lt;h2>The takeaway&lt;span class="hx-absolute -hx-mt-20" id="the-takeaway">&lt;/span>
+&lt;a href="#the-takeaway" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>It is good to check which of your nodes are which PVE versions.&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>pveversion -v | grep -e proxmox-ve: -e pve-cluster:
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>The bug was fixed for &lt;code>pve-cluster: 8.0.6&lt;/code> (not to be confused with &lt;code>proxmox-ve&lt;/code>).&lt;/p>
+&lt;p>Check if you have symlinks present:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>readlink -v /etc/ssh/ssh_known_hosts
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>You either have the symlink present - pointing to the shared location:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>/etc/pve/priv/known_hosts&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Or an actual local file present:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>readlink: /etc/ssh/ssh_known_hosts: Invalid argument&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Or nothing - neither file nor symlink - there at all:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>readlink: /etc/ssh/ssh_known_hosts: No such file or directory&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Consider removing the symlink with the newly provided option:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>pvecm updatecerts --unmerge-known-hosts
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>And removing (with a backup) the local machine-wide file as well:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>mv /etc/ssh/ssh_known_hosts{,.disabled}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>If you are running own scripting that e.g. depends on SSH being able to successfully verify identity of all current and future nodes, you now need to roll your own solution going forward.&lt;/p>
+&lt;p>Most users would not have noticed except when suddenly being asked to verify authenticity when &amp;ldquo;jumping&amp;rdquo; cluster nodes, something that was previously seamless.&lt;/p>
+&lt;h2>What is not covered here&lt;span class="hx-absolute -hx-mt-20" id="what-is-not-covered-here">&lt;/span>
+&lt;a href="#what-is-not-covered-here" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>This post is meant to highlight the change in default PVE cluster behaviour when it comes to verifying remote hosts against &lt;code>known_hosts&lt;/code> &lt;em>by the connecting clients&lt;/em>. It does NOT cover still present &lt;a href="https://free-pmx.github.io/insights/passwordless-ssh-can-lock-you-out/" >bugs&lt;/a> relating to the use of shared &lt;code>authorized_keys&lt;/code> that are used to authenticate the connecting clients &lt;em>by the remote host&lt;/em>.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/Roadmap#Proxmox_VE_8.2" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/Roadmap#Proxmox_VE_8.2&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://forum.proxmox.com/threads/137809/" target="_blank" rel="noopener">https://forum.proxmox.com/threads/137809/&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://pve.proxmox.com/pve-docs/pvecm.1.html" target="_blank" rel="noopener">https://pve.proxmox.com/pve-docs/pvecm.1.html&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/openssh-server/sshd.8.en.html#SSH_KNOWN_HOSTS_FILE_FORMAT" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/openssh-server/sshd.8.en.html#SSH_KNOWN_HOSTS_FILE_FORMAT&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:5">
+&lt;p>&lt;a href="https://bugzilla.proxmox.com/show_bug.cgi?id=5461" target="_blank" rel="noopener">https://bugzilla.proxmox.com/show_bug.cgi?id=5461&lt;/a>&amp;#160;&lt;a href="#fnref:5" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:6">
+&lt;p>&lt;a href="https://lists.proxmox.com/pipermail/pve-devel/2024-October/065853.html" target="_blank" rel="noopener">https://lists.proxmox.com/pipermail/pve-devel/2024-October/065853.html&lt;/a>&amp;#160;&lt;a href="#fnref:6" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>Passwordless SSH can lock you out</title><link>https://free-pmx.github.io/insights/passwordless-ssh-can-lock-you-out/</link><pubDate>Fri, 08 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/passwordless-ssh-can-lock-you-out/</guid><description>
+&lt;p>If you follow standard security practices, you would not allow &lt;code>root&lt;/code> logins, let alone connections over SSH (as with &lt;em>Debian&lt;/em> standard install). But this would deem your PVE unable to function properly, so you can only resort to fix your &lt;code>/etc/ssh/sshd_config&lt;/code> &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> with the option:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>PermitRootLogin prohibit-password&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>That way, you only allow connections with valid keys (not password). Prior to this, you would have copied over your public keys with &lt;code>ssh-copy-id&lt;/code> &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> or otherwise add them to &lt;code>/root/.ssh/authorized_keys&lt;/code>.&lt;/p>
+&lt;p>But this has a &lt;em>huge caveat&lt;/em> on any standard PVE install. When you examine the file, it is actually a symbolic link:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>/root/.ssh/authorized_keys -&amp;gt; /etc/pve/priv/authorized_keys&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>This is because there&amp;rsquo;s already other nodes&amp;rsquo; keys there to allow for cross-connecting - and the location is shared. This has several issues, most important of which is that the actual file lies in &lt;code>/etc/pve&lt;/code> which is a virtual filesystem &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup> mounted only when all goes well during boot-up.&lt;/p>
+&lt;h2>What could go wrong&lt;span class="hx-absolute -hx-mt-20" id="what-could-go-wrong">&lt;/span>
+&lt;a href="#what-could-go-wrong" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>If your &lt;code>/etc/pve&lt;/code> does not get mounted during bootup, your node will appear offline and will not be accessible over SSH, let alone GUI.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> If accessing via other node&amp;rsquo;s GUI, you will get confusing &lt;code>Permission denied (publickey,password)&lt;/code> in the &amp;ldquo;Shell&amp;rdquo;.&lt;/p>
+&lt;/blockquote>
+&lt;p>You are essentially locked-out, despite the system otherwise booted up except for PVE services. You cannot troubleshoot over SSH, you would need to resort to OOB management or physical access.&lt;/p>
+&lt;p>This is because during your SSH connection, there&amp;rsquo;s no way to verify your key against the &lt;code>/etc/pve/priv/authorized_keys&lt;/code>.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> If you allow root to authenticate also by password, it will lock you out of &amp;ldquo;GUI only&amp;rdquo;. Your SSH will not work - obviously - with key, but fallback to password prompt.&lt;/p>
+&lt;/blockquote>
+&lt;h2>How to avoid this&lt;span class="hx-absolute -hx-mt-20" id="how-to-avoid-this">&lt;/span>
+&lt;a href="#how-to-avoid-this" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>You need to use your own &lt;code>authorized_keys&lt;/code>, different from the default that has been hijacked by PVE. The proper way to do this is define its location in the config:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>cat &amp;gt; /etc/ssh/sshd_config.d/LocalAuthorizedKeys.conf &amp;lt;&amp;lt;&amp;lt; &amp;#34;AuthorizedKeysFile .ssh/local_authorized_keys&amp;#34;&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>If you now copy your own keys to &lt;code>/root/.ssh/local_authorized_keys&lt;/code> file (on every node), you are immune from this design flaw.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> There are even better ways to approach this, e.g. SSH certificates, in which case you are not prone to encounter this bug for your own setup. This is out of scope for this post.&lt;/p>
+&lt;/blockquote>
+&lt;h2>FAQ&lt;span class="hx-absolute -hx-mt-20" id="faq">&lt;/span>
+&lt;a href="#faq" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ol>
+&lt;li>&lt;strong>What about non-privileged user &amp;amp; sudo?&lt;/strong>&lt;/li>
+&lt;/ol>
+&lt;p>This will work just fine, too. Note that PVE does not come with &lt;code>sudo&lt;/code> and will nevertheless require &lt;code>root&lt;/code> allowed to login over SSH to preserve full features.&lt;/p>
+&lt;ol start="2">
+&lt;li>&lt;strong>Why is this considered a design flaw?&lt;/strong>&lt;/li>
+&lt;/ol>
+&lt;p>Due to the Proxmox stack setup, inaccessible SSH for &lt;code>root&lt;/code> user prevents you to e.g. troubleshoot failing services (when SSH is healthy) even from GUI shell of a healthy node. It is &lt;em>impossible&lt;/em> to remove SSH access for &lt;code>root&lt;/code> account in Proxmox without &lt;em>losing features&lt;/em>, some of which are &lt;a href="https://pve.proxmox.com/wiki/Cluster_Manager#_role_of_ssh_in_proxmox_ve_clusters" target="_blank" rel="noopener">documented&lt;/a>.&lt;/p>
+&lt;p>Since you cannot disable &lt;code>root&lt;/code> over SSH, you might as well embrace it, however if you have another way in through other steps (e.g. FAQ 1), it is just as good (the GUI path will still not work though).&lt;/p>
+&lt;ol start="3">
+&lt;li>&lt;strong>The incidence ratio of system &amp;ldquo;down&amp;rdquo; (but has full networking) vs &amp;ldquo;down down&amp;rdquo; (when it need to rescue from console / kvm) seems low.&lt;/strong>&lt;/li>
+&lt;/ol>
+&lt;p>The issue is that failure of &lt;code>pve-cluster&lt;/code> service at boot (which needs to run also on standalone nodes) that causes the &amp;ldquo;lockout&amp;rdquo; is quite common side effect of e.g. networking misconfiguration or &lt;em>pmxcfs&lt;/em> backend-database corruption. They are out of scope of this post, but happen definitely more often than just failing SSH, let alone networking as a whole. Also note that lots of home systems do not have OOB/KVM or even rely entirely on GUI.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/openssh-server/sshd_config.5.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/openssh-server/sshd_config.5.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/openssh-client/ssh-copy-id.1.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/openssh-client/ssh-copy-id.1.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_%28pmxcfs%29" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_(pmxcfs)&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>Why Proxmox VE shreds your SSDs</title><link>https://free-pmx.github.io/insights/why-proxmox-ve-shreds-your-ssds/</link><pubDate>Sun, 03 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/why-proxmox-ve-shreds-your-ssds/</guid><description>
+&lt;p>You must have read, at least once, that Proxmox recommend &amp;ldquo;enterprise&amp;rdquo; SSDs for their virtualisation stack. But why does it shred regular SSDs? It would not have to, in fact the modern ones, even without PLP, can endure as much as 2,000 TBW per life. But where do the writes come from? ZFS? Let&amp;rsquo;s have a look.&lt;/p>
+&lt;p>&lt;em>The below is particularly of interest for any homelab user, but in fact everyone who cares about wasted system performance might be interested.&lt;/em>&lt;/p>
+&lt;p>If you have a cluster, you can actually safely follow this experiment. Add a new &amp;ldquo;probe&amp;rdquo; node that you will later dispose of and let it join the cluster. On the &amp;ldquo;probe&amp;rdquo; node, let&amp;rsquo;s isolate the configuration state backend database onto a separate filesystem, to be able to benchmark only &lt;em>pmxcfs&lt;/em> - the virtual filesystem that is mounted to &lt;code>/etc/pve&lt;/code> and holds your configuration files, i.e. cluster state.&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>dd if=/dev/zero of=/root/pmxcfsbd bs=1M count=256
+mkfs.ext4 /root/pmxcfsbd
+systemctl stop pve-cluster
+cp /var/lib/pve-cluster/config.db /root/
+mount -o loop /root/pmxcfsbd /var/lib/pve-cluster&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>This creates a separate loop device, sufficiently large, shuts down the service issuing writes to the backend database and copies it out of its original location before mounting the blank device over the original path where the service will look for it again.&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code># lsblk
+NAME MAJ:MIN RM SIZE RO TYPE MOUNTPOINTS
+loop0 7:0 0 256M 0 loop /var/lib/pve-cluster&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Now copy the backend database onto the dedicated - so far blank - loop device and restart the service.&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>cp /root/config.db /var/lib/pve-cluster/
+systemctl start pve-cluster.service
+systemctl status pve-cluster.service&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>If all went well, your service is up and running and issuing its database writes onto separate loop device.&lt;/p>
+&lt;p>From now on, you can measure the writes occurring solely there:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>vmstat -d&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>You are interested in the loop device, in my case &lt;code>loop0&lt;/code>, wait some time, e.g. an hour, and list the same again:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>disk- ------------reads------------ ------------writes----------- -----IO------
+total merged sectors ms total merged sectors ms cur sec
+loop0 1360 0 6992 96 3326 0 124180 16645 0 17&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>I did my test with different configurations, &lt;em>all idle&lt;/em>:&lt;/p>
+&lt;ul>
+&lt;li>single node (no cluster);&lt;/li>
+&lt;li>2-nodes cluster;&lt;/li>
+&lt;li>5-nodes cluster.&lt;/li>
+&lt;/ul>
+&lt;p>The rate of writes on these otherwise &lt;em>freshly installed and idle (zero guests)&lt;/em> systems is impressive:&lt;/p>
+&lt;ul>
+&lt;li>single ~ 1,000 sectors / minute writes&lt;/li>
+&lt;li>2-nodes ~ 2,000 sectors / minute writes&lt;/li>
+&lt;li>5-nodes ~ 5,000 sectors / minute writes&lt;/li>
+&lt;/ul>
+&lt;p>But this is &lt;em>not&lt;/em> real life scenario, in fact, these are bare minimums and in the wild, the growth is NOT LINEAR at all, it will depend on e.g. number of HA services running and frequency of migrations.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> These measurements are filesystem-agnostic, so if your root is e.g. installed on ZFS, you would need to &lt;em>multiply&lt;/em> the numbers by the amplifation of the filesystem on top.&lt;/p>
+&lt;/blockquote>
+&lt;p>But suffice to say, even just the idle writes amount to minimum ~ 0.5TB per year for single-node, or 2.5TB (on each node) with a 5-node cluster.&lt;/p>
+&lt;p>&lt;strong>Consider that in my case at the least (no migrations, no config changes - no guests after all), almost none of this data needs to be hitting the block layer.&lt;/strong>&lt;/p>
+&lt;p>That&amp;rsquo;s right, these are completely avoidable writes wasting out your filesystem performance. If it&amp;rsquo;s a homelab, you probably care about shredding your SSDs endurance prematurely. In any environment, this increases risk of data loss during power failure as the backend might come back up corrupt.&lt;/p>
+&lt;p>And these are just configuration state related writes, nothing to do with your guests writing onto their block layer. But then again, there were &lt;em>no state changes&lt;/em> in my test scenarios.&lt;/p>
+&lt;p>So in a nutshell, consider that deploying clusters takes its toll and account for factor of the above quoted numbers due to actual filesystem amplifications and real files being written in operational environment.&lt;/p></description></item></channel></rss>
