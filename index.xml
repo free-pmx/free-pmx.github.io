@@ -1,0 +1,1404 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>free-pmx – Free software &amp; Proxmox</title><link>https://free-pmx.github.io/</link><description>Recent content in Free software &amp; Proxmox on free-pmx</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 05 Dec 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://free-pmx.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>The mountpoint of /etc/pve</title><link>https://free-pmx.github.io/insights/mountpoint-etc-pve/</link><pubDate>Sun, 08 Dec 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/mountpoint-etc-pve/</guid><description>
+&lt;p>This post will provide superficial overview of the Proxmox cluster filesystem, also dubbed &lt;em>pmxcfs&lt;/em> &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> that goes beyond the official terse:&lt;/p>
+&lt;blockquote>
+&lt;p>a database-driven file system for storing configuration files, replicated in real time to all cluster nodes&lt;/p>
+&lt;/blockquote>
+&lt;p>Most users would have encountered it as the location where their guest configurations are stored and simply known by its path of &lt;code>/etc/pve&lt;/code>.&lt;/p>
+&lt;h2>Mountpoint&lt;span class="hx-absolute -hx-mt-20" id="mountpoint">&lt;/span>
+&lt;a href="#mountpoint" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Foremost, it is important to understand that the directory itself as it resides on the actual system disk is &lt;em>empty&lt;/em> simply because it is just a mountpoint, serving similar purpose as e.g. &lt;code>/mnt&lt;/code>.&lt;/p>
+&lt;p>This can be easily verified: &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>findmnt /etc/pve&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>TARGET SOURCE FSTYPE OPTIONS
+/etc/pve /dev/fuse fuse rw,nosuid,nodev,relatime,user_id=0,group_id=0,default_permissions,allow_other&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Somewhat counterintuitive as it is bit of a stretch from the &lt;em>Filesystem Hierarchy Standard&lt;/em> &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup> on the point that &lt;code>/etc&lt;/code> is meant to hold &lt;em>host-specific configuration files&lt;/em> which are understood as &lt;em>local&lt;/em> and &lt;em>static&lt;/em> - as can be seen above, this is not a regular mountpoint. And those are not regular files within.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> If you find yourself in a situation of genuinely unpopulated &lt;code>/etc/pve&lt;/code> on a regular PVE node, you are most likely experiencing an issue where the filesystem did not get mounted, one of such was &lt;a href="https://free-pmx.github.io/guides/error-failed-to-load-local-private-key/" >described here previously&lt;/a>.&lt;/p>
+&lt;/blockquote>
+&lt;h2>Virtual filesystem&lt;span class="hx-absolute -hx-mt-20" id="virtual-filesystem">&lt;/span>
+&lt;a href="#virtual-filesystem" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The filesystem type as reported by &lt;code>findmnt&lt;/code> is that of a &lt;em>Filesystem in userspace&lt;/em> (&lt;em>FUSE&lt;/em>) which is feature provided by the Linux kernel. &lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup>&lt;/p>
+&lt;p>Filesystems are commonly implemented on kernel level, adding support for a new such one would then require bespoke kernel modules. With FUSE, it is this middle interface layer that resides in kernel and a regular user-space process interacts with it through the use of a library - this is especially useful for &lt;em>virtual filesystems&lt;/em> that are making some representation of arbitrary data through regular filesystem paths.&lt;/p>
+&lt;p>A good example of a FUSE filesystem is SSHFS &lt;sup id="fnref:5">&lt;a href="#fn:5" class="footnote-ref" role="doc-noteref">5&lt;/a>&lt;/sup> which uses SSH (or more precisely a subsystem of &lt;code>sftp&lt;/code>) to connect to a remote system whilst making the appearance of working with a regular mounted filesystem. But in fact, virtual filesystems do not even have to store the actual data, but may instead e.g. generate them on-the-fly.&lt;/p>
+&lt;h2>The process of pmxcfs&lt;span class="hx-absolute -hx-mt-20" id="the-process-of-pmxcfs">&lt;/span>
+&lt;a href="#the-process-of-pmxcfs" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The PVE process that provides such FUSE filesystem is - unsurprisngly - &lt;code>pmxcfs&lt;/code> and needs to be always running, at least if you want to be able to access anything in &lt;code>/etc/pve&lt;/code> - this is what gives the user the illusion that there is any structure there.&lt;/p>
+&lt;p>You will find it on any standard PVE install in the &lt;code>pve-cluster&lt;/code> package:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>dpkg-query -S &lt;span style="color:#66d9ef">$(&lt;/span>which pmxcfs&lt;span style="color:#66d9ef">)&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>pve-cluster: /usr/bin/pmxcfs&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>And it is started by a service called &lt;code>pve-cluster&lt;/code>:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>systemctl status &lt;span style="color:#66d9ef">$(&lt;/span>pidof pmxcfs&lt;span style="color:#66d9ef">)&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>● pve-cluster.service - The Proxmox VE cluster filesystem
+Loaded: loaded (/lib/systemd/system/pve-cluster.service; enabled; preset: enabled)
+Active: active (running) since Sat 2024-12-07 10:03:07 UTC; 1 day 3h ago
+Process: 808 ExecStart=/usr/bin/pmxcfs (code=exited, status=0/SUCCESS)
+Main PID: 835 (pmxcfs)
+Tasks: 8 (limit: 2285)
+Memory: 61.5M
+---8&amp;lt;---&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> The name might be misleading as this service is enabled and active on &lt;em>every&lt;/em> node, including single (non-cluster) node installs.&lt;/p>
+&lt;/blockquote>
+&lt;h2>Magic&lt;span class="hx-absolute -hx-mt-20" id="magic">&lt;/span>
+&lt;a href="#magic" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Interestingly, if you launch &lt;code>pmxcfs&lt;/code> on a standalone host with no PVE install - such when we &lt;a href="https://free-pmx.github.io/guides/the-proxmox-cluster-filesystem-build/" >built our own without PVE packages&lt;/a>), i.e. with no files having ever been written to it, it will still present you with some content of &lt;code>/etc/pve&lt;/code>:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>ls -la&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>total 4
+drwxr-xr-x 2 root www-data 0 Jan 1 1970 .
+drwxr-xr-x 70 root root 4096 Dec 8 14:23 ..
+-r--r----- 1 root www-data 152 Jan 1 1970 .clusterlog
+-rw-r----- 1 root www-data 2 Jan 1 1970 .debug
+lrwxr-xr-x 1 root www-data 0 Jan 1 1970 local -&amp;gt; nodes/dummy
+lrwxr-xr-x 1 root www-data 0 Jan 1 1970 lxc -&amp;gt; nodes/dummy/lxc
+-r--r----- 1 root www-data 38 Jan 1 1970 .members
+lrwxr-xr-x 1 root www-data 0 Jan 1 1970 openvz -&amp;gt; nodes/dummy/openvz
+lrwxr-xr-x 1 root www-data 0 Jan 1 1970 qemu-server -&amp;gt; nodes/dummy/qemu-server
+-r--r----- 1 root www-data 0 Jan 1 1970 .rrd
+-r--r----- 1 root www-data 940 Jan 1 1970 .version
+-r--r----- 1 root www-data 18 Jan 1 1970 .vmlist&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>There&amp;rsquo;s telltale signs that this content is not real, the times are all 0 seconds from the &lt;em>UNIX Epoch&lt;/em>. &lt;sup id="fnref:6">&lt;a href="#fn:6" class="footnote-ref" role="doc-noteref">6&lt;/a>&lt;/sup>&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>stat local&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code> File: local -&amp;gt; nodes/dummy
+Size: 0 Blocks: 0 IO Block: 4096 symbolic link
+Device: 0,44 Inode: 6 Links: 1
+Access: (0755/lrwxr-xr-x) Uid: ( 0/ root) Gid: ( 33/www-data)
+Access: 1970-01-01 00:00:00.000000000 &amp;#43;0000
+Modify: 1970-01-01 00:00:00.000000000 &amp;#43;0000
+Change: 1970-01-01 00:00:00.000000000 &amp;#43;0000
+Birth: -&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>On a closer look, all of the pre-existing symbolic links, such as the one above point to non-existent (not yet created) directories.&lt;/p>
+&lt;p>There&amp;rsquo;s only dotfiles and what they contain looks generated:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>cat .members&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>{
+&amp;#34;nodename&amp;#34;: &amp;#34;dummy&amp;#34;,
+&amp;#34;version&amp;#34;: 0
+}&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>And they are not all equally writeable:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>echo &amp;gt; .members&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>-bash: .members: Input/output error&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>We are witnessing the implementation details hidden under the very facade of a virtual file system. Nothing here is real, not before we start writing to it anyways. That is, &lt;em>when and where allowed&lt;/em>.&lt;/p>
+&lt;p>For instance, we can create directories, but when we create a second (imaginary node&amp;rsquo;s) directory and create a &lt;em>config-like file&lt;/em> in it, it will not allow us to create second with the same name in the &lt;em>other&lt;/em> &amp;ldquo;node&amp;rdquo; location - as if already existed.&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>mkdir -p /etc/pve/nodes/dummy/&lt;span style="color:#f92672">{&lt;/span>qemu-server,lxc&lt;span style="color:#f92672">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mkdir -p /etc/pve/nodes/another/&lt;span style="color:#f92672">{&lt;/span>qemu-server,lxc&lt;span style="color:#f92672">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>echo &amp;gt; /etc/pve/nodes/dummy/qemu-server/100.conf
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>echo &amp;gt; /etc/pve/nodes/another/qemu-server/100.conf&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>-bash: /etc/pve/nodes/another/qemu-server/100.conf: File exists&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>But it&amp;rsquo;s not really &lt;em>there&lt;/em>:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>ls -la /etc/pve/nodes/another/qemu-server/&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>total 0
+drwxr-xr-x 2 root www-data 0 Dec 8 14:27 .
+drwxr-xr-x 2 root www-data 0 Dec 8 14:27 ..&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>And when newly created file does not &lt;em>look like&lt;/em> a config one, it is suddenly fine:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>echo &amp;gt; /etc/pve/nodes/dummy/qemu-server/a.conf
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>echo &amp;gt; /etc/pve/nodes/another/qemu-server/a.conf
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>ls -R /etc/pve/nodes/&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>/etc/pve/nodes/:
+another dummy
+/etc/pve/nodes/another:
+lxc qemu-server
+/etc/pve/nodes/another/lxc:
+/etc/pve/nodes/another/qemu-server:
+a.conf
+/etc/pve/nodes/dummy:
+lxc qemu-server
+/etc/pve/nodes/dummy/lxc:
+/etc/pve/nodes/dummy/qemu-server:
+100.conf a.conf&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>None of the magic - that is clearly there to &lt;em>prevent e.g. allowing a guest running off the same configuration&lt;/em>, thus accessing the same (shared) storage, on two different nodes - however explains where the files are actually stored, or how. That is, when they are real.&lt;/p>
+&lt;h2>Persistent storage&lt;span class="hx-absolute -hx-mt-20" id="persistent-storage">&lt;/span>
+&lt;a href="#persistent-storage" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>It&amp;rsquo;s time to look at where &lt;em>pmxcfs&lt;/em> is &lt;strong>actually&lt;/strong> writing to. We know these files do not really exist as such, but when not readily generated, the data must go somewhere, otherwise we could not retrieve what we had previously written.&lt;/p>
+&lt;p>We will take our &lt;a href="https://free-pmx.github.io/guides/the-proxmox-cluster-probe/" >probe node we had built previously&lt;/a> with 3 real nodes (the probe just monitoring) - but you can check this on any real node - we will make use of &lt;code>fatrace&lt;/code>: &lt;sup id="fnref:7">&lt;a href="#fn:7" class="footnote-ref" role="doc-noteref">7&lt;/a>&lt;/sup>&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>apt install -y fatrace
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>fatrace&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>fatrace: Failed to add watch for /etc/pve: No such device
+pmxcfs(864): W /var/lib/pve-cluster/config.db-wal
+---8&amp;lt;---&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>The nice thing about running a dedicated probe is not have anything else really writing much other than &lt;em>pmxcfs&lt;/em> itself, so we will immediately start seeing its write targets. Another notable point about this tool is that it ignores events on virtual filesystems, that&amp;rsquo;s why the reported fail with &lt;code>/etc/pve&lt;/code> as such - it is not a device.&lt;/p>
+&lt;p>We are be getting &lt;em>exactly&lt;/em> what we want, just the actual block device writes on the system, but we can nail it further down (e.g. if we had a busy system, like a real node) and also, we will let it observe the activity for 5 minutes and create a log:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>fatrace -c pmxcfs -s &lt;span style="color:#ae81ff">300&lt;/span> -o fatrace-pmxcfs.log&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>When done, we can explore the log &lt;em>as-is&lt;/em> to get the idea of how busy it&amp;rsquo;s been going or where the hits were particularly popular, but let&amp;rsquo;s just summarise it for unique filepaths and sort by paths:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>sort -u -k3 fatrace-pmxcfs.log&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;details class="last-of-type:hx-mb-0 hx-rounded-lg hx-bg-neutral-50 dark:hx-bg-neutral-800 hx-p-2 hx-mt-4 hx-group" >
+&lt;summary class="hx-flex hx-items-center hx-cursor-pointer hx-select-none hx-list-none hx-p-1 hx-rounded hx-transition-colors hover:hx-bg-gray-100 dark:hover:hx-bg-neutral-800 before:hx-mr-1 before:hx-inline-block before:hx-transition-transform before:hx-content-[''] dark:before:hx-invert rtl:before:hx-rotate-180 group-open:before:hx-rotate-90">
+&lt;strong class="hx-text-lg">log &amp;hellip;&lt;/strong>
+&lt;/summary>
+&lt;div class="hx-p-2 hx-overflow-hidden">
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>pmxcfs(864): W /var/lib/pve-cluster/config.db
+pmxcfs(864): W /var/lib/pve-cluster/config.db-wal
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-node/pve1
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-node/pve1
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-node/pve1
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-node/pve2
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-node/pve2
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-node/pve2
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-node/pve3
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-node/pve3
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-node/pve3
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-storage/pve1/local
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-storage/pve1/local
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-storage/pve1/local
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-storage/pve1/local-zfs
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-storage/pve1/local-zfs
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-storage/pve1/local-zfs
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-storage/pve2/local
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-storage/pve2/local
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-storage/pve2/local
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-storage/pve2/local-zfs
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-storage/pve2/local-zfs
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-storage/pve2/local-zfs
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-storage/pve3/local
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-storage/pve3/local
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-storage/pve3/local
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-storage/pve3/local-zfs
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-storage/pve3/local-zfs
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-storage/pve3/local-zfs
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-vm/100
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-vm/100
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-vm/100
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-vm/101
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-vm/101
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-vm/101
+pmxcfs(864): O /var/lib/rrdcached/db/pve2-vm/102
+pmxcfs(864): CW /var/lib/rrdcached/db/pve2-vm/102
+pmxcfs(864): CWO /var/lib/rrdcached/db/pve2-vm/102&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;/div>
+&lt;/details>
+&lt;p>Now that&amp;rsquo;s still a lot of records, but it&amp;rsquo;s basically just:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>/var/lib/pve-cluster/&lt;/code> with &lt;em>SQLite&lt;/em> &lt;sup id="fnref:8">&lt;a href="#fn:8" class="footnote-ref" role="doc-noteref">8&lt;/a>&lt;/sup> database files&lt;/li>
+&lt;li>&lt;code>/var/lib/rrdcached/db&lt;/code> and &lt;em>rrdcached&lt;/em> &lt;sup id="fnref:9">&lt;a href="#fn:9" class="footnote-ref" role="doc-noteref">9&lt;/a>&lt;/sup> data&lt;/li>
+&lt;/ul>
+&lt;p>Also, there&amp;rsquo;s an interesting &lt;em>anomaly&lt;/em> in the output, can you spot it?&lt;/p>
+&lt;h2>SQLite backend&lt;span class="hx-absolute -hx-mt-20" id="sqlite-backend">&lt;/span>
+&lt;a href="#sqlite-backend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>We now know the actual &lt;em>persistent&lt;/em> data must be hitting the block layer when written into a database. We can dump it (even on a running node) to better see what&amp;rsquo;s inside: &lt;sup id="fnref:10">&lt;a href="#fn:10" class="footnote-ref" role="doc-noteref">10&lt;/a>&lt;/sup>&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>apt install -y sqlite3
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>sqlite3 /var/lib/pve-cluster/config.db .dump &amp;gt; config.dump.sql&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;details class="last-of-type:hx-mb-0 hx-rounded-lg hx-bg-neutral-50 dark:hx-bg-neutral-800 hx-p-2 hx-mt-4 hx-group" >
+&lt;summary class="hx-flex hx-items-center hx-cursor-pointer hx-select-none hx-list-none hx-p-1 hx-rounded hx-transition-colors hover:hx-bg-gray-100 dark:hover:hx-bg-neutral-800 before:hx-mr-1 before:hx-inline-block before:hx-transition-transform before:hx-content-[''] dark:before:hx-invert rtl:before:hx-rotate-180 group-open:before:hx-rotate-90">
+&lt;strong class="hx-text-lg">dump &amp;hellip;&lt;/strong>
+&lt;/summary>
+&lt;div class="hx-p-2 hx-overflow-hidden">
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sql" data-lang="sql">&lt;span style="display:flex;">&lt;span>PRAGMA foreign_keys&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">OFF&lt;/span>;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">BEGIN&lt;/span> &lt;span style="color:#66d9ef">TRANSACTION&lt;/span>;
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">CREATE&lt;/span> &lt;span style="color:#66d9ef">TABLE&lt;/span> tree (
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> inode INTEGER &lt;span style="color:#66d9ef">PRIMARY&lt;/span> &lt;span style="color:#66d9ef">KEY&lt;/span> &lt;span style="color:#66d9ef">NOT&lt;/span> &lt;span style="color:#66d9ef">NULL&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> parent INTEGER &lt;span style="color:#66d9ef">NOT&lt;/span> &lt;span style="color:#66d9ef">NULL&lt;/span> &lt;span style="color:#66d9ef">CHECK&lt;/span>(typeof(parent)&lt;span style="color:#f92672">==&lt;/span>&lt;span style="color:#e6db74">&amp;#39;integer&amp;#39;&lt;/span>),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">version&lt;/span> INTEGER &lt;span style="color:#66d9ef">NOT&lt;/span> &lt;span style="color:#66d9ef">NULL&lt;/span> &lt;span style="color:#66d9ef">CHECK&lt;/span>(typeof(&lt;span style="color:#66d9ef">version&lt;/span>)&lt;span style="color:#f92672">==&lt;/span>&lt;span style="color:#e6db74">&amp;#39;integer&amp;#39;&lt;/span>),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> writer INTEGER &lt;span style="color:#66d9ef">NOT&lt;/span> &lt;span style="color:#66d9ef">NULL&lt;/span> &lt;span style="color:#66d9ef">CHECK&lt;/span>(typeof(writer)&lt;span style="color:#f92672">==&lt;/span>&lt;span style="color:#e6db74">&amp;#39;integer&amp;#39;&lt;/span>),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> mtime INTEGER &lt;span style="color:#66d9ef">NOT&lt;/span> &lt;span style="color:#66d9ef">NULL&lt;/span> &lt;span style="color:#66d9ef">CHECK&lt;/span>(typeof(mtime)&lt;span style="color:#f92672">==&lt;/span>&lt;span style="color:#e6db74">&amp;#39;integer&amp;#39;&lt;/span>),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">type&lt;/span> INTEGER &lt;span style="color:#66d9ef">NOT&lt;/span> &lt;span style="color:#66d9ef">NULL&lt;/span> &lt;span style="color:#66d9ef">CHECK&lt;/span>(typeof(&lt;span style="color:#66d9ef">type&lt;/span>)&lt;span style="color:#f92672">==&lt;/span>&lt;span style="color:#e6db74">&amp;#39;integer&amp;#39;&lt;/span>),
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> name TEXT &lt;span style="color:#66d9ef">NOT&lt;/span> &lt;span style="color:#66d9ef">NULL&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">data&lt;/span> BLOB);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1044298&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1733672152&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;__version__&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">2&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">3&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719679&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;datacenter.cfg&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;6b6579626f6172643a20656e2d75730a&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">5&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719679&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;user.cfg&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;757365723a726f6f744070616d3a313a303a3a3a6140622e633a3a0a&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">6&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">7&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719679&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;storage.cfg&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719711&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;virtual-guest&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">9&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">9&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719714&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;priv&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">11&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">11&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719714&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;nodes&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">11&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719714&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve1&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">13&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">13&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719714&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;lxc&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">14&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">14&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719714&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;qemu-server&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">15&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">15&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719714&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;openvz&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">16&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">16&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719714&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;priv&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">17&lt;/span>,&lt;span style="color:#ae81ff">9&lt;/span>,&lt;span style="color:#ae81ff">17&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719714&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;lock&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">24&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">25&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719714&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-www.key&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">26&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">27&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719715&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-ssl.key&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">28&lt;/span>,&lt;span style="color:#ae81ff">9&lt;/span>,&lt;span style="color:#ae81ff">29&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719721&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-root-ca.key&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">30&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">31&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719721&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-root-ca.pem&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">32&lt;/span>,&lt;span style="color:#ae81ff">9&lt;/span>,&lt;span style="color:#ae81ff">1077&lt;/span>,&lt;span style="color:#ae81ff">3&lt;/span>,&lt;span style="color:#ae81ff">1731721184&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-root-ca.srl&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;30330a&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">35&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">38&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719721&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-ssl.pem&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">48&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">48&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719721&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;firewall&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">49&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">49&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719721&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;ha&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">50&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">50&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719721&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;mapping&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">51&lt;/span>,&lt;span style="color:#ae81ff">9&lt;/span>,&lt;span style="color:#ae81ff">51&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719721&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;acme&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">52&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">52&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731719721&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;sdn&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">918&lt;/span>,&lt;span style="color:#ae81ff">9&lt;/span>,&lt;span style="color:#ae81ff">920&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1731721072&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;known_hosts&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">11&lt;/span>,&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721103&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve2&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">941&lt;/span>,&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">941&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721103&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;lxc&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">942&lt;/span>,&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">942&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721103&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;qemu-server&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">943&lt;/span>,&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">943&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721103&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;openvz&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">944&lt;/span>,&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">944&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721103&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;priv&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">955&lt;/span>,&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">956&lt;/span>,&lt;span style="color:#ae81ff">2&lt;/span>,&lt;span style="color:#ae81ff">1731721114&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-ssl.key&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">957&lt;/span>,&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">960&lt;/span>,&lt;span style="color:#ae81ff">2&lt;/span>,&lt;span style="color:#ae81ff">1731721114&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-ssl.pem&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">11&lt;/span>,&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721173&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve3&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1049&lt;/span>,&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">1049&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721173&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;lxc&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1050&lt;/span>,&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">1050&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721173&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;qemu-server&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1051&lt;/span>,&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">1051&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721173&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;openvz&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1052&lt;/span>,&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">1052&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721173&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;priv&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1056&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">376959&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1732878296&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;corosync.conf&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1073&lt;/span>,&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">1074&lt;/span>,&lt;span style="color:#ae81ff">3&lt;/span>,&lt;span style="color:#ae81ff">1731721184&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-ssl.key&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1075&lt;/span>,&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">1078&lt;/span>,&lt;span style="color:#ae81ff">3&lt;/span>,&lt;span style="color:#ae81ff">1731721184&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-ssl.pem&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">2680&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">2682&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1731721950&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;vzdump.cron&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">68803&lt;/span>,&lt;span style="color:#ae81ff">941&lt;/span>,&lt;span style="color:#ae81ff">68805&lt;/span>,&lt;span style="color:#ae81ff">2&lt;/span>,&lt;span style="color:#ae81ff">1731798577&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;101.conf&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">98568&lt;/span>,&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">98570&lt;/span>,&lt;span style="color:#ae81ff">2&lt;/span>,&lt;span style="color:#ae81ff">1732140371&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;lrm_status&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">270850&lt;/span>,&lt;span style="color:#ae81ff">13&lt;/span>,&lt;span style="color:#ae81ff">270851&lt;/span>,&lt;span style="color:#ae81ff">99&lt;/span>,&lt;span style="color:#ae81ff">1732624332&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;102.conf&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">377443&lt;/span>,&lt;span style="color:#ae81ff">11&lt;/span>,&lt;span style="color:#ae81ff">377443&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1732878617&lt;/span>,&lt;span style="color:#ae81ff">4&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;probe&amp;#39;&lt;/span>,&lt;span style="color:#66d9ef">NULL&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">382230&lt;/span>,&lt;span style="color:#ae81ff">377443&lt;/span>,&lt;span style="color:#ae81ff">382231&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1732881967&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;pve-ssl.pem&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">893854&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">893856&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1733565797&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;ssh_known_hosts&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">893860&lt;/span>,&lt;span style="color:#ae81ff">940&lt;/span>,&lt;span style="color:#ae81ff">893862&lt;/span>,&lt;span style="color:#ae81ff">2&lt;/span>,&lt;span style="color:#ae81ff">1733565799&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;ssh_known_hosts&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">893863&lt;/span>,&lt;span style="color:#ae81ff">9&lt;/span>,&lt;span style="color:#ae81ff">893865&lt;/span>,&lt;span style="color:#ae81ff">3&lt;/span>,&lt;span style="color:#ae81ff">1733565799&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;authorized_keys&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">893866&lt;/span>,&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">893868&lt;/span>,&lt;span style="color:#ae81ff">3&lt;/span>,&lt;span style="color:#ae81ff">1733565799&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;ssh_known_hosts&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">894275&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">894277&lt;/span>,&lt;span style="color:#ae81ff">2&lt;/span>,&lt;span style="color:#ae81ff">1733566055&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;replication.cfg&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">894279&lt;/span>,&lt;span style="color:#ae81ff">13&lt;/span>,&lt;span style="color:#ae81ff">894281&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1733566056&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;100.conf&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1016100&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1016103&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1733652207&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;authkey.pub.old&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1016106&lt;/span>,&lt;span style="color:#ae81ff">0&lt;/span>,&lt;span style="color:#ae81ff">1016108&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1733652207&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;authkey.pub&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1016109&lt;/span>,&lt;span style="color:#ae81ff">9&lt;/span>,&lt;span style="color:#ae81ff">1016111&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1733652207&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;authkey.key&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1044291&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">1044293&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1733672147&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;lrm_status&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1044294&lt;/span>,&lt;span style="color:#ae81ff">1048&lt;/span>,&lt;span style="color:#ae81ff">1044296&lt;/span>,&lt;span style="color:#ae81ff">3&lt;/span>,&lt;span style="color:#ae81ff">1733672150&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;lrm_status&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">INSERT&lt;/span> &lt;span style="color:#66d9ef">INTO&lt;/span> tree &lt;span style="color:#66d9ef">VALUES&lt;/span>(&lt;span style="color:#ae81ff">1044297&lt;/span>,&lt;span style="color:#ae81ff">12&lt;/span>,&lt;span style="color:#ae81ff">1044298&lt;/span>,&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">1733672152&lt;/span>,&lt;span style="color:#ae81ff">8&lt;/span>,&lt;span style="color:#e6db74">&amp;#39;lrm_status.tmp.984&amp;#39;&lt;/span>,X&lt;span style="color:#e6db74">&amp;#39;---8&amp;lt;---&amp;#39;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">COMMIT&lt;/span>;&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> Most BLOB objects above have been replaced with &lt;code>---8&amp;lt;---&lt;/code> for brevity.&lt;/p>
+&lt;/blockquote>
+&lt;/div>
+&lt;/details>
+&lt;p>It is a trivial database schema, with a single table &lt;code>tree&lt;/code> holding everything which is then &lt;em>mimicking&lt;/em> a real filesystem, let&amp;rsquo;s take one such entry (row), for instance:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>INODE&lt;/th>
+&lt;th>PARENT&lt;/th>
+&lt;th>VERSION&lt;/th>
+&lt;th>WRITER&lt;/th>
+&lt;th>MTIME&lt;/th>
+&lt;th>TYPE&lt;/th>
+&lt;th>NAME&lt;/th>
+&lt;th>DATA&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>4&lt;/td>
+&lt;td>0&lt;/td>
+&lt;td>5&lt;/td>
+&lt;td>0&lt;/td>
+&lt;td>&lt;em>timestamp&lt;/em>&lt;/td>
+&lt;td>8&lt;/td>
+&lt;td>user.cfg&lt;/td>
+&lt;td>&lt;em>BLOB&lt;/em>&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>This row contains the virtual &lt;code>user.cfg&lt;/code> (NAME) file &lt;em>contents&lt;/em> as &lt;em>Binary Large Object&lt;/em> (&lt;em>BLOB&lt;/em>) - in DATA column - which is a &lt;em>hexdump&lt;/em> and since we know this is not a binary file, it is easy to glance into: &lt;sup id="fnref:11">&lt;a href="#fn:11" class="footnote-ref" role="doc-noteref">11&lt;/a>&lt;/sup>&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>apt install -y xxd
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>xxd -r -p &lt;span style="color:#f92672">&amp;lt;&amp;lt;&amp;lt;&lt;/span> X&lt;span style="color:#e6db74">&amp;#39;757365723a726f6f744070616d3a313a303a3a3a6140622e633a3a0a&amp;#39;&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>user:root@pam:1:0:::a@b.c::&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>TYPE signifies it is a &lt;em>regular file&lt;/em> and e.g. not a directory.&lt;/p>
+&lt;p>MTIME represents &lt;em>timestamp&lt;/em> and despite its name, it is actually returned as value for &lt;em>mtime&lt;/em>, &lt;em>ctime&lt;/em> and &lt;em>atime&lt;/em> as we could have previously seen in the &lt;code>stat&lt;/code> output, but here it&amp;rsquo;s a real one:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>date -d @1731719679&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>Sat Nov 16 01:14:39 AM UTC 2024&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>WRITER column records the interesting piece of information of &lt;em>which node was it that has last written to this row&lt;/em> - some (initially generated, as is the case here) start with 0, however.&lt;/p>
+&lt;p>Accompanying it is VERSION, which is a counter that &lt;em>increases every time a row has been written to&lt;/em> - this helps finding out which node needs to catch up if it has fallen behind with its own copy of data.&lt;/p>
+&lt;p>Lastly, the file will present itself in the filesystem as if under &lt;em>inode&lt;/em> (hence the same column name) 4, residing within the PARENT &lt;em>inode&lt;/em> of 0. This means it is in the root of the structure.&lt;/p>
+&lt;p>These are usual filesystem concepts, &lt;sup id="fnref:12">&lt;a href="#fn:12" class="footnote-ref" role="doc-noteref">12&lt;/a>&lt;/sup> but there&amp;rsquo;s no separation of metadata and data as the BLOB is in the same row as all the other information, it&amp;rsquo;s really rudimentary.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> The INODE column is the &lt;em>primary key&lt;/em> (no two rows can have the same value of it) of the table and as only &lt;em>one parent&lt;/em> is possible to be referenced in this way, it is also the reason why the filesystem cannot support hardlinks.&lt;/p>
+&lt;/blockquote>
+&lt;h2>More magic&lt;span class="hx-absolute -hx-mt-20" id="more-magic">&lt;/span>
+&lt;a href="#more-magic" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>There&amp;rsquo;s further points of interest in the database, especially in what everything is missing, but the virtual filesystem still provides for it:&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;em>No access rights&lt;/em> related information - this is rigidly generated depending on file&amp;rsquo;s path.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;em>No symlinks&lt;/em>, the presented ones are runtime generated and all point to supposedly node&amp;rsquo;s own directory under &lt;code>/etc/pve/nodes/&lt;/code> - the symlink&amp;rsquo;s target is the &lt;em>nodename&lt;/em> as determined from the &lt;em>hostname&lt;/em> by &lt;code>pmxcfs&lt;/code> on startup. Creation of own symlinks is NOT implemented.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;em>None of the always present dotfiles&lt;/em> either - this is why we could not write into e.g. &lt;code>.members&lt;/code> file above. The contents are truly generated data determined at runtime. That said, you actually CAN create a regular (well, virtual) dotfile here that will be stored properly.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;p>Because of all this, the database - under healthy circumstances - does NOT store any &lt;em>node-specific&lt;/em> (relative to the node it resides on) data, they are all each alike on every node of the cluster and could be copied around (when &lt;code>pmxcfs&lt;/code> is offline, obviously).&lt;/p>
+&lt;p>However, because of the imaginary &lt;em>inode&lt;/em> referencing and the &lt;em>versioning&lt;/em>, it &lt;strong>absolutely is NOT possible to copy around just about any database file that otherwise holds seemingly identical file structure&lt;/strong>.&lt;/p>
+&lt;h2>Missing links&lt;span class="hx-absolute -hx-mt-20" id="missing-links">&lt;/span>
+&lt;a href="#missing-links" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>If you followed the &lt;a href="https://free-pmx.github.io/guides/the-proxmox-cluster-filesystem-build/" >guide on your own pmxcfs build&lt;/a> meticulously, you would have noticed the libraries required are:&lt;/p>
+&lt;ul>
+&lt;li>&lt;em>libfuse&lt;/em>&lt;/li>
+&lt;li>&lt;em>libsqlite3&lt;/em>&lt;/li>
+&lt;li>&lt;em>librrd&lt;/em>&lt;/li>
+&lt;li>&lt;em>libcpg&lt;/em>, &lt;em>libcmap&lt;/em>, &lt;em>libquorum&lt;/em>, &lt;em>libqb&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;p>The &lt;em>libfuse&lt;/em> &lt;sup id="fnref:13">&lt;a href="#fn:13" class="footnote-ref" role="doc-noteref">13&lt;/a>&lt;/sup> allows &lt;em>pmxcfs&lt;/em> to interact with the kernel when users attempt to access content in &lt;code>/etc/pve&lt;/code>. SQLite is interacted via &lt;code>libsqlite3&lt;/code>. What about the rest?&lt;/p>
+&lt;p>When we did our block layer write observation tests on our plain &lt;em>probe&lt;/em>, there was nothing - no PVE installed - that would be writing into &lt;code>/etc/pve&lt;/code> - the mountpoint of the virtual filesystem, yet we observed &lt;code>pmxcfs&lt;/code> writing onto disk.&lt;/p>
+&lt;p>If we did the same on our &lt;em>dummy&lt;/em> standalone host (also with no PVE installed) running just &lt;code>pmxcfs&lt;/code>, we would not really observe any of those plentiful writes. We would need to start manipulating contents in &lt;code>/etc/pve&lt;/code> to block layer writes resulting from it.&lt;/p>
+&lt;p>So clearly, &lt;em>the origin of those writes must be coming from the rest of the cluster&lt;/em>, the actual nodes - they run much more than just the &lt;code>pmxcfs&lt;/code> process. And that&amp;rsquo;s where &lt;em>Corosync&lt;/em> comes into play (that is, on a node in a cluster). What happens is that ANY file operation on ANY node is spread via messages within the Closed Process Group you might have &lt;a href="https://free-pmx.github.io/insights/the-proxmox-corosync-fallacy/" >read up details on already&lt;/a> and this is why all those required properties were important - to have all of the operations happening exactly in the same order on every node.&lt;/p>
+&lt;p>This is also why another little piece of magic happens, statefully - &lt;strong>when a node becomes inquorate&lt;/strong>, &lt;code>pmxcfs&lt;/code> on &lt;em>that node&lt;/em> sees to it that it &lt;strong>turns the filesystem read-only&lt;/strong>, that is, until such node is back in the quorum. This is easy to simulate on our probe by simly stopping &lt;code>pve-cluster&lt;/code> service. And that is what all of the libraries of Corosync (&lt;em>libcpg&lt;/em>, &lt;em>libcmap&lt;/em>, &lt;em>libquorum&lt;/em>, &lt;em>libqb&lt;/em>) are utilised for.&lt;/p>
+&lt;p>And what about the discreet &lt;em>librrd&lt;/em>? Well, we could see lots of writes actually hitting all over &lt;code>/var/lib/rrdcached/db&lt;/code>, that&amp;rsquo;s a location for &lt;em>rrdcached&lt;/em> &lt;sup id="fnref1:9">&lt;a href="#fn:9" class="footnote-ref" role="doc-noteref">9&lt;/a>&lt;/sup> which handles caching writes of round robin time series data. The entire &lt;em>RRDtool&lt;/em> &lt;sup id="fnref:14">&lt;a href="#fn:14" class="footnote-ref" role="doc-noteref">14&lt;/a>&lt;/sup> is well beyond the scope of this post, but this is how data is gathered for e.g. charting across all nodes of all the same statistics. If you ever wondered how it is possible with no master to see them in GUI of any node for all other nodes, that&amp;rsquo;s because each node writes it into &lt;code>/etc/pve/.rrd&lt;/code>, another of the non-existent &lt;em>virtual&lt;/em> files. Each node thus receives time series data of all other nodes and passes it over via &lt;em>rrdcached&lt;/em>.&lt;/p>
+&lt;h2>The Proxmox enigma&lt;span class="hx-absolute -hx-mt-20" id="the-proxmox-enigma">&lt;/span>
+&lt;a href="#the-proxmox-enigma" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>As this was a rather keypoints-only overview, quite a few details would be naturally missing, some which are best discovered when hands-on experimenting with the probe setup. One noteworthy omission however, which will only be covered in a separate post needs to be pointed out.&lt;/p>
+&lt;p>If you paid very good attention when checking the sorted &lt;code>fatrace&lt;/code> output, especially there was a note on an anomaly, you would have noticed the mystery:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>pmxcfs(864): W /var/lib/pve-cluster/config.db
+pmxcfs(864): W /var/lib/pve-cluster/config.db-wal&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>There&amp;rsquo;s no &lt;code>R&lt;/code> in those observations, ever - the SQLite database is being constantly written to, but it is never read from. But that&amp;rsquo;s for another time.&lt;/p>
+&lt;h2>Conclusion&lt;span class="hx-absolute -hx-mt-20" id="conclusion">&lt;/span>
+&lt;a href="#conclusion" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Essentially, it is important to understand that &lt;code>/etc/pve&lt;/code> is nothing but a mountpoint. The &lt;code>pmxcfs&lt;/code> provides it while running and it is anything &lt;em>but&lt;/em> an ordinary filesystem. The &lt;code>pmxcfs&lt;/code> process itself then writes onto the block layer into specific &lt;code>/var/lib/&lt;/code> locations. It utilises &lt;em>Corosync&lt;/em> when in a cluster to cross-share all the file operations amongst nodes, but it does all the rest &lt;em>equally well&lt;/em> when not in a cluster - the &lt;code>corosync&lt;/code> service is then not even running, but &lt;code>pmxcfs&lt;/code> always has to. The special properties of the virtual filesystem have one &lt;strong>primary objective - to prevent data corruption&lt;/strong> by disallowing risky configuration states. That does not however mean that the database itself cannot get corrupted andif you want to back it up properly, you have to be &lt;a href="https://free-pmx.github.io/guides/backup-cluster-config-etc-pve/" >dumping the database&lt;/a>.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_%28pmxcfs%29" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_(pmxcfs)&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/util-linux/findmnt.8.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/util-linux/findmnt.8.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html" target="_blank" rel="noopener">https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a href="https://docs.kernel.org/filesystems/fuse.html" target="_blank" rel="noopener">https://docs.kernel.org/filesystems/fuse.html&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:5">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/sshfs/sshfs.1.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/sshfs/sshfs.1.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:5" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:6">
+&lt;p>&lt;a href="https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap04.html#tag_04_19" target="_blank" rel="noopener">https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap04.html#tag_04_19&lt;/a>&amp;#160;&lt;a href="#fnref:6" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:7">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/fatrace/fatrace.8.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/fatrace/fatrace.8.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:7" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:8">
+&lt;p>&lt;a href="https://www.sqlite.org" target="_blank" rel="noopener">https://www.sqlite.org&lt;/a>&amp;#160;&lt;a href="#fnref:8" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:9">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/rrdcached/rrdcached.1.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/rrdcached/rrdcached.1.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:9" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&amp;#160;&lt;a href="#fnref1:9" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:10">
+&lt;p>&lt;a href="https://www.sqlite.org/cli.html" target="_blank" rel="noopener">https://www.sqlite.org/cli.html&lt;/a>&amp;#160;&lt;a href="#fnref:10" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:11">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/xxd/xxd.1.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/xxd/xxd.1.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:11" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:12">
+&lt;p>&lt;a href="https://www.kernel.org/doc/html/latest/filesystems/ext4/inodes.html" target="_blank" rel="noopener">https://www.kernel.org/doc/html/latest/filesystems/ext4/inodes.html&lt;/a>&amp;#160;&lt;a href="#fnref:12" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:13">
+&lt;p>&lt;a href="https://github.com/libfuse/libfuse" target="_blank" rel="noopener">https://github.com/libfuse/libfuse&lt;/a>&amp;#160;&lt;a href="#fnref:13" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:14">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/rrdtool/rrdtool.1.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/rrdtool/rrdtool.1.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:14" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>The lesser known quorum options</title><link>https://free-pmx.github.io/insights/the-lesser-known-quorum-options/</link><pubDate>Sun, 01 Dec 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/the-lesser-known-quorum-options/</guid><description>
+&lt;p>Proxmox do not really cater much for cluster deployments at a small scale of 2-4 nodes and always assume High Availability could be put to use in their approach to the out-of-the-box configuration. It is very likely for this reason that some great features of &lt;em>Corosync&lt;/em> configuration &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> are left out of the official documentation entirely.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> You might want to read more on how Proxmox utlise Corosync in a separate &lt;a href="https://free-pmx.github.io/insights/the-proxmox-corosync-fallacy/" >post&lt;/a>.&lt;/p>
+&lt;/blockquote>
+&lt;h2>Quorum provider service&lt;span class="hx-absolute -hx-mt-20" id="quorum-provider-service">&lt;/span>
+&lt;a href="#quorum-provider-service" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Proxmox need a quorum provider service &lt;code>votequorum&lt;/code> &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> to prevent data corruption in situations when two or more partitions were to form in a cluster of which a member would be about to modify the same data unchecked by the (from the viewpoint of the modifying member) missing members (of a detached partition). This is signified by the always populated &lt;code>corosync.conf&lt;/code> section:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>quorum {
+provider: corosync_votequorum
+}&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Other &lt;code>key: value&lt;/code> pairs could be specified here. One of the notable values of importance is &lt;code>expected_votes&lt;/code>, in standard PVE deployment not explicit:&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;code>votequorum&lt;/code> requires an &lt;code>expected_votes&lt;/code> value to function, this can be provided in two ways. The number of expected votes will be automatically calculated when the &lt;code>nodelist { }&lt;/code> section is present in &lt;code>corosync.conf&lt;/code> or &lt;code>expected_votes&lt;/code> can be specified in the &lt;code>quorum { }&lt;/code> section.&lt;/p>
+&lt;/blockquote>
+&lt;p>The &lt;em>quorum&lt;/em> value is then calculated as majority out of the sum of &lt;code>nodelist { node { quorum_votes: } }&lt;/code> values. You can see the live calculated value on any node: &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup>&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>corosync-quorumtool
+---8&amp;lt;---
+Votequorum information
+----------------------
+Expected votes: 4
+Highest expected: 4
+Total votes: 4
+Quorum: 3
+Flags: Quorate
+---8&amp;lt;---&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> The Proxmox-specific tooling &lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup> makes use of this output as well with &lt;code>pve status&lt;/code>. It is also this value you are temporarily changing with &lt;code>pvecm expected&lt;/code> which actually makes use of &lt;code>corosync-quorumtool -e&lt;/code>.&lt;/p>
+&lt;/blockquote>
+&lt;h2>The options&lt;span class="hx-absolute -hx-mt-20" id="the-options">&lt;/span>
+&lt;a href="#the-options" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>These can be added to the &lt;code>quorum {}&lt;/code> section:&lt;/p>
+&lt;h3>The two-node cluster&lt;span class="hx-absolute -hx-mt-20" id="the-two-node-cluster">&lt;/span>
+&lt;a href="#the-two-node-cluster" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>The option &lt;code>two_node: 1&lt;/code> is meant for clusters made up of 2 nodes, it causes each node to assume it is in the quorum ever after successfully booting up and having seeing the other node at least once. This has quite some merit considering that a disappearing node could be considered having gone down and it is therefore safe to continue operating on its own. If you run this simple cluster setup, your remaining node does not have to lose quorum when the other one is down.&lt;/p>
+&lt;h3>Auto tie-breaker&lt;span class="hx-absolute -hx-mt-20" id="auto-tie-breaker">&lt;/span>
+&lt;a href="#auto-tie-breaker" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>The option &lt;code>auto_tie_breaker: 1&lt;/code> (ATB) allows two equally size partitions to decide which one retains quorum deterministically, having e.g. a 4-node cluster split into two 2-node partitions would not allow either to become quorate, but ATB allows one of these to be picked as quorate, by default the one with the lowest &lt;code>nodeid&lt;/code> in the partition. This can be tweaked with tunable &lt;code>auto_tie_breaker_node: lowest|highest|&amp;lt;list of node IDs&amp;gt;&lt;/code>.&lt;/p>
+&lt;p>This could be also your go-to option in case you are running a 2-node cluster with one of the nodes in a &amp;ldquo;master&amp;rdquo; role and the other one almost invariably off.&lt;/p>
+&lt;h3>Last man standing&lt;span class="hx-absolute -hx-mt-20" id="last-man-standing">&lt;/span>
+&lt;a href="#last-man-standing" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>The option &lt;code>last_man_standing: 1&lt;/code> (LMS) allows to dynamically adapt to scenarios when nodes go down for prolonged periods by recalculating the &lt;code>expected_votes&lt;/code> value. In a 10-node cluster where e.g. 3 nodes have not been seen for longer than a specified period (by default 10 seconds - tunable option &lt;code>last_man_standing_window&lt;/code> in milliseconds), the new &lt;code>expected_votes&lt;/code> value becomes 7. This can cascade down to as few as 2 nodes left being quorate. If you also enable ATB, it could go to even just down to a single node.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;em>&lt;strong>IMPORTANT&lt;/strong>&lt;/em> This option should not be used in HA clusters as implemented by Proxmox.&lt;/p>
+&lt;/blockquote>
+&lt;h2>Notes&lt;span class="hx-absolute -hx-mt-20" id="notes">&lt;/span>
+&lt;a href="#notes" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>If you are also looking how to safely disable HA on a Proxmox cluster, there is a &lt;a href="https://free-pmx.github.io/guides/how-to-disable-ha-permanently/" >guide&lt;/a>.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/corosync.conf.5.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/corosync.conf.5.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/votequorum.5.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/votequorum.5.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/corosync-quorumtool.8.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/corosync-quorumtool.8.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a href="https://pve.proxmox.com/pve-docs/pvecm.1.html" target="_blank" rel="noopener">https://pve.proxmox.com/pve-docs/pvecm.1.html&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>The Proxmox time bomb watchdog</title><link>https://free-pmx.github.io/insights/the-proxmox-time-bomb-watchdog/</link><pubDate>Thu, 21 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/the-proxmox-time-bomb-watchdog/</guid><description>
+&lt;p>The title of this post is inspired by the very statement of &amp;ldquo;[watchdogs] are like a loaded gun&amp;rdquo; from Proxmox wiki. &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> Proxmox include one such &lt;em>active-by-default&lt;/em> tool on every single node anyway. There&amp;rsquo;s further misinformation, including on official forums, when watchdogs are &amp;ldquo;disarmed&amp;rdquo; and it is thus impossible to e.g. isolate genuine non-software related reboots. Design flaws might get your node auto-reboot with no indication in the GUI. The CLI part is undocumented as is reliably disabling this feature.&lt;/p>
+&lt;h2>Always ticking&lt;span class="hx-absolute -hx-mt-20" id="always-ticking">&lt;/span>
+&lt;a href="#always-ticking" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Auto-reboots are often associated with &lt;em>High Availability&lt;/em> (HA), &lt;sup id="fnref1:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> but in fact, every fresh Proxmox VE (PVE) install, unlike Debian, comes with an obscure setup out of the box, set at boot time and ready to be triggered at any point - it does NOT matter if you make use of HA or not.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> There are different kinds of watchdog mechanisms other than the one covered by this post, e.g. kernel NMI watchdog, &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> Corosync watchdog, &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup> etc. The subject of this post is merely the Proxmox multiplexer-based implementation that the HA stack relies on.&lt;/p>
+&lt;/blockquote>
+&lt;h2>Watchdogs&lt;span class="hx-absolute -hx-mt-20" id="watchdogs">&lt;/span>
+&lt;a href="#watchdogs" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>In terms of computer systems, &lt;em>watchdogs&lt;/em> ensure that things either work well or the system at least attempts to self-recover into a state which retains overall integrity after a malfunction. No watchdog would be needed for a system that can be attended in due time, but some additional mechanism is required to avoid collisions for automated recovery systems which need to make certain assumptions.&lt;/p>
+&lt;p>The watchdog employed by PVE is based on a &lt;em>timer&lt;/em> - one that has a fixed initial countdown value set and once activated, a &lt;em>handler&lt;/em> needs to constantly attend it by resetting it back to the initial value, so that it does NOT go off. In a twist, it is the timer making sure that the handler is all alive and well attending it, not the other way around.&lt;/p>
+&lt;p>The timer itself is accessed via a &lt;em>watchdog device&lt;/em> and is a feature supported by Linux kernel &lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup> - it could be an independent hardware component on some systems or entirely software-based, such as &lt;code>softdog&lt;/code> &lt;sup id="fnref:5">&lt;a href="#fn:5" class="footnote-ref" role="doc-noteref">5&lt;/a>&lt;/sup> - that Proxmox default to when otherwise left unconfigured.&lt;/p>
+&lt;p>When available, you will find &lt;code>/dev/watchdog&lt;/code> on your system. You can also inquire about its handler:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>lsof +c12 /dev/watchdog&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME
+watchdog-mux 484190 root 3w CHR 10,130 0t0 686 /dev/watchdog&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>And more details:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>wdctl /dev/watchdog0 &lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>Device: /dev/watchdog0
+Identity: Software Watchdog [version 0]
+Timeout: 10 seconds
+Pre-timeout: 0 seconds
+Pre-timeout governor: noop
+Available pre-timeout governors: noop&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>The bespoke PVE process is rather timid with logging:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>journalctl -b -o cat -u watchdog-mux&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>Started watchdog-mux.service - Proxmox VE watchdog multiplexer.
+Watchdog driver &amp;#39;Software Watchdog&amp;#39;, version 0&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>But you can check how it is attending the device, every second:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>strace -r -e ioctl -p &lt;span style="color:#66d9ef">$(&lt;/span>pidof watchdog-mux&lt;span style="color:#66d9ef">)&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>strace: Process 484190 attached
+0.000000 ioctl(3, WDIOC_KEEPALIVE) = 0
+1.001639 ioctl(3, WDIOC_KEEPALIVE) = 0
+1.001690 ioctl(3, WDIOC_KEEPALIVE) = 0
+1.001626 ioctl(3, WDIOC_KEEPALIVE) = 0
+1.001629 ioctl(3, WDIOC_KEEPALIVE) = 0&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>If the handler stops resetting the timer, your system WILL undergo an emergency reboot. Killing the &lt;code>watchdog-mux&lt;/code> process would give you exactly that outcome within 10 seconds.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> If you stop the handler correctly, it should gracefully stop the timer. However the device is still available, a simple &lt;code>touch&lt;/code> will get you a reboot.&lt;/p>
+&lt;/blockquote>
+&lt;h2>The multiplexer&lt;span class="hx-absolute -hx-mt-20" id="the-multiplexer">&lt;/span>
+&lt;a href="#the-multiplexer" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The obscure &lt;code>watchdog-mux&lt;/code> service is a Proxmox construct of a multiplexer - a component that combines inputs from other sources to proxy to the actual watchdog device. You can confirm it being part of the HA stack:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>dpkg-query -S &lt;span style="color:#66d9ef">$(&lt;/span>which watchdog-mux&lt;span style="color:#66d9ef">)&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>pve-ha-manager: /usr/sbin/watchdog-mux&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>The primary purpose of the service, apart from attending the watchdog device (and keeping your node from rebooting), is to listen on a socket to its so-called clients - these are the better known services of &lt;code>pve-ha-crm&lt;/code> and &lt;code>pve-ha-lrm&lt;/code>. The multiplexer signifies there are clients connected to it by creating a directory &lt;code>/run/watchdog-mux.active/&lt;/code>, but this is rather confusing as the &lt;code>watchdog-mux&lt;/code> service itself is ALWAYS active.&lt;/p>
+&lt;p>While the multiplexer is supposed to handle the watchdog device (at ALL times), it is itself handled by the clients (if the are any active). The actual mechanisms behind the HA and its fencing &lt;sup id="fnref:6">&lt;a href="#fn:6" class="footnote-ref" role="doc-noteref">6&lt;/a>&lt;/sup> are out of scope for this post, but it is important to understand that none of the components of HA stack can be removed, even if unused:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>apt remove -s -o Debug::pkgProblemResolver&lt;span style="color:#f92672">=&lt;/span>true pve-ha-manager&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+Starting pkgProblemResolver with broken count: 3
+Starting 2 pkgProblemResolver with broken count: 3
+Investigating (0) qemu-server:amd64 &amp;lt; 8.2.7 @ii K Ib &amp;gt;
+Broken qemu-server:amd64 Depends on pve-ha-manager:amd64 &amp;lt; 4.0.6 @ii pR &amp;gt; (&amp;gt;= 3.0-9)
+Considering pve-ha-manager:amd64 10001 as a solution to qemu-server:amd64 3
+Removing qemu-server:amd64 rather than change pve-ha-manager:amd64
+Investigating (0) pve-container:amd64 &amp;lt; 5.2.2 @ii K Ib &amp;gt;
+Broken pve-container:amd64 Depends on pve-ha-manager:amd64 &amp;lt; 4.0.6 @ii pR &amp;gt; (&amp;gt;= 3.0-9)
+Considering pve-ha-manager:amd64 10001 as a solution to pve-container:amd64 2
+Removing pve-container:amd64 rather than change pve-ha-manager:amd64
+Investigating (0) pve-manager:amd64 &amp;lt; 8.2.10 @ii K Ib &amp;gt;
+Broken pve-manager:amd64 Depends on pve-container:amd64 &amp;lt; 5.2.2 @ii R &amp;gt; (&amp;gt;= 5.1.11)
+Considering pve-container:amd64 2 as a solution to pve-manager:amd64 1
+Removing pve-manager:amd64 rather than change pve-container:amd64
+Investigating (0) proxmox-ve:amd64 &amp;lt; 8.2.0 @ii K Ib &amp;gt;
+Broken proxmox-ve:amd64 Depends on pve-manager:amd64 &amp;lt; 8.2.10 @ii R &amp;gt; (&amp;gt;= 8.0.4)
+Considering pve-manager:amd64 1 as a solution to proxmox-ve:amd64 0
+Removing proxmox-ve:amd64 rather than change pve-manager:amd64&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Considering the PVE stack is so inter-dependent with its components, they can&amp;rsquo;t be removed or disabled safely without taking extra precautions.&lt;/p>
+&lt;h2>How to get rid of the auto-reboot&lt;span class="hx-absolute -hx-mt-20" id="how-to-get-rid-of-the-auto-reboot">&lt;/span>
+&lt;a href="#how-to-get-rid-of-the-auto-reboot" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>You can find two separate snippets on how to reliably put the feature out of action here, depending on whether you are looking for
+a &lt;a href="https://free-pmx.github.io/guides/how-to-disable-ha-for-maintenance/" >temporary&lt;/a>
+or &lt;a href="https://free-pmx.github.io/guides/how-to-disable-ha-permanently/" >lasting&lt;/a>
+solution.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/High_Availability" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/High_Availability&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&amp;#160;&lt;a href="#fnref1:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://www.kernel.org/doc/Documentation/lockup-watchdogs.txt" target="_blank" rel="noopener">https://www.kernel.org/doc/Documentation/lockup-watchdogs.txt&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/corosync.conf.5.en.html#watchdog_device" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/corosync.conf.5.en.html#watchdog_device&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a href="https://www.kernel.org/doc/html/latest/watchdog/" target="_blank" rel="noopener">https://www.kernel.org/doc/html/latest/watchdog/&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:5">
+&lt;p>&lt;a href="https://github.com/torvalds/linux/blob/master/drivers/watchdog/softdog.c" target="_blank" rel="noopener">https://github.com/torvalds/linux/blob/master/drivers/watchdog/softdog.c&lt;/a>&amp;#160;&lt;a href="#fnref:5" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:6">
+&lt;p>&lt;a href="https://pve.proxmox.com/pve-docs/chapter-ha-manager.html#ha_manager_fencing" target="_blank" rel="noopener">https://pve.proxmox.com/pve-docs/chapter-ha-manager.html#ha_manager_fencing&lt;/a>&amp;#160;&lt;a href="#fnref:6" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>The Proxmox Corosync fallacy</title><link>https://free-pmx.github.io/insights/the-proxmox-corosync-fallacy/</link><pubDate>Sat, 16 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/the-proxmox-corosync-fallacy/</guid><description>
+&lt;p>Unlike some other systems, Proxmox VE does not rely on a fixed master to keep consistency in a group (cluster). The &lt;em>quorum&lt;/em> concept of distributed computing is used to keep the hosts (nodes) &amp;ldquo;on the same page&amp;rdquo; when it comes to cluster operations. The very word denotes a select group - this has some advantages in terms of resiliency of such systems.&lt;/p>
+&lt;h2>The quorum sideshow&lt;span class="hx-absolute -hx-mt-20" id="the-quorum-sideshow">&lt;/span>
+&lt;a href="#the-quorum-sideshow" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Is a virtual machine (guest) starting up somewhere? Only one node is allowed to spin it up at any given time and while it is running, it can&amp;rsquo;t start elsewhere - such occurrence could result in corruption of shared resources, such as storage, as well as other ill-effects to the users.&lt;/p>
+&lt;p>The nodes have to go by the same shared &amp;ldquo;book&amp;rdquo; at any given moment. If some nodes lose sight of other nodes, it is important that there&amp;rsquo;s only one such book. Since there&amp;rsquo;s no master, it is important to know who has the right book and what to obide even without such book. In its simplest form - albeit there are others - it&amp;rsquo;s the book of the majority that matters. If a node is out of this majority, it is out of quorum.&lt;/p>
+&lt;h2>The state machine&lt;span class="hx-absolute -hx-mt-20" id="the-state-machine">&lt;/span>
+&lt;a href="#the-state-machine" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The book is the single source of truth for any &lt;em>quorate&lt;/em> node (one that is in the quorum) - in technical parlance, this truth describes what is called a &lt;em>state&lt;/em> - of the configuration of everything in the cluster. Nodes that are part of the quorum can participate on changing the state. The state is nothing more than the set of configuration files and their changes - triggered by inputs from the operator - are considered transitions between the states. This whole behaviour of state transitions being subject to inputs is what defines a &lt;em>state machine&lt;/em>.&lt;/p>
+&lt;h2>Proxmox Cluster File System (pmxcfs)&lt;span class="hx-absolute -hx-mt-20" id="proxmox-cluster-file-system-pmxcfs">&lt;/span>
+&lt;a href="#proxmox-cluster-file-system-pmxcfs" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The view of the state, i.e. current cluster configuration, is provided via a virtual filesystem loosely following the &amp;ldquo;everything is a file&amp;rdquo; concept of UNIX. This is where the in-house &lt;em>pmxcfs&lt;/em> &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> mounts across all nodes into &lt;code>/etc/pve&lt;/code> - it is important that it is NOT a local directory, but a mounted in-memory filesystem. Generally, transition of the state needs to get approved by the quorum first, so pmxcfs should not allow such configuration changes that would break consistency in the cluster. It is up to the bespoke implementation which changes are allowed and which not.&lt;/p>
+&lt;h2>Inquorate&lt;span class="hx-absolute -hx-mt-20" id="inquorate">&lt;/span>
+&lt;a href="#inquorate" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>A node out of quorum (having become &lt;em>inquorate&lt;/em>) lost sight of the cluster-wide state, so it also lost the ability to write into it. Furthermore, it is not allowed to make autonomous decisions of its own that could jeopardise others and has this ingrained in its primordial code. If there are running guests, they will stay running. If you manually stop them, this will be allowed, but no new ones can be started and the previously &amp;ldquo;locally&amp;rdquo; stopped guest can&amp;rsquo;t be started up again - not even on another node, that is, not without manual intervention. This is all because any such changes would need to be recorded into the state to be safe, before which they would need to get approved by the entire quorum, which, for an inquorate node, is impossible.&lt;/p>
+&lt;h2>Consistency&lt;span class="hx-absolute -hx-mt-20" id="consistency">&lt;/span>
+&lt;a href="#consistency" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Nodes in quorum will see the last known state of all nodes &lt;em>uniformly&lt;/em>, including of the nodes that are not in quorum at the moment. In fact, they rely on the default behaviour of inquorate nodes that makes them &amp;ldquo;stay where they were&amp;rdquo; or at worst, gracefully make such changes to their state that could not cause any configuration conflict upon rejoining the quorum. This is the reason why it is impossible (without overriding manual effort) to e.g. start a guest that was last seen up and running on since-then inquorate node.&lt;/p>
+&lt;h2>Closed Process Group and Extended Virtual Synchrony&lt;span class="hx-absolute -hx-mt-20" id="closed-process-group-and-extended-virtual-synchrony">&lt;/span>
+&lt;a href="#closed-process-group-and-extended-virtual-synchrony" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Once the state machine operates over distributed set of nodes, it falls into the category of so-called &lt;em>closed process group&lt;/em> (CPG). The group members (nodes) are the &lt;em>processors&lt;/em> and they need to be constantly messaging each other about any transitions they wish to make. This is much more complex than it would initially appear because of the guarantees needed, e.g. any change on any node would need to be communicated to all others in exactly the same order or if undeliverable to any of them, delivered to none of them.&lt;/p>
+&lt;p>Only if all of the nodes see all the same changes in the same order, it is possible to rely on their actions being consistent with the cluster. But there&amp;rsquo;s one more case to take care of which can wreak havoc - fragmentation. In case of CPG splitting into multiple components, it is important that only one (primary) component continues operating, while others (in non-primary component(s)) do not, however they should safely reconnect and catch-up with the primary component once possible.&lt;/p>
+&lt;p>The above including the last requirement describes the guarantees provided by the so-called &lt;em>Extended Virtual Synchrony&lt;/em> (EVS) model.&lt;/p>
+&lt;h2>Corosync Cluster Engine&lt;span class="hx-absolute -hx-mt-20" id="corosync-cluster-engine">&lt;/span>
+&lt;a href="#corosync-cluster-engine" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>None of the above-mentioned is in any way special with Proxmox, in fact an open source component Corosync &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> was chosen to provide the necessary piece into the implementation stack. Some confusion might arise about what Proxmox make use of from the provided features.&lt;/p>
+&lt;p>&lt;em>The CPG communication suite with EVS guarantees and quorum system notifications are utilised, however others are NOT.&lt;/em>&lt;/p>
+&lt;p>Corosync is providing the necessary intra-cluster messaging, its authentication and encryption, support for redundancy and completely abstracts all the associated issues to the developer using the library. Unlike e.g. Pacemaker &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup>, Proxmox do NOT use Corosync to support their own &lt;em>High-Availability&lt;/em> (HA) &lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup> implementation other than by sensing loss-of-quorum situations.&lt;/p>
+&lt;h2>The takeaway&lt;span class="hx-absolute -hx-mt-20" id="the-takeaway">&lt;/span>
+&lt;a href="#the-takeaway" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Consequently, on single-node installs, the service of Corosync is not even running and pmxcfs runs in so-called local mode - no messages need to be sent to any other nodes. Some Proxmox tooling acts as mere wrapper around Corosync CLI facilities,&lt;br>
+&lt;br>
+e.g. &lt;code>pvecm status&lt;/code> &lt;sup id="fnref:5">&lt;a href="#fn:5" class="footnote-ref" role="doc-noteref">5&lt;/a>&lt;/sup> wraps in &lt;code>corosync-quorumtool -siH&lt;/code> &lt;sup id="fnref:6">&lt;a href="#fn:6" class="footnote-ref" role="doc-noteref">6&lt;/a>&lt;/sup>&lt;br>
+&lt;br>
+and you can use lots of Corosync tooling and configuration options independently of Proxmox whether they decide to &amp;ldquo;support&amp;rdquo; it or not.&lt;/p>
+&lt;p>&lt;em>This is also where any connections to the open source library end - any issues with inability to mount pmxcfs, having its mount turn read-only or (not only) HA induced reboots have nothing to do with Corosync.&lt;/em>&lt;/p>
+&lt;p>In fact, e.g. inability to recover fragmented clusters is more likely &lt;em>caused by Proxmox stack due its reliance on Corosync distributing configuration changes of Corosync itself&lt;/em> - a design decision that costs many headaches of:&lt;/p>
+&lt;ul>
+&lt;li>mismatching &lt;code>/etc/corosync/corosync.conf&lt;/code> - the actual configuration file; and&lt;/li>
+&lt;li>&lt;code>/etc/pve/corosync.conf&lt;/code> - the counter-intuitive cluster-wide version&lt;/li>
+&lt;/ul>
+&lt;p>that is meant to be auto-distributed on edits, entirely invented by Proxmox and further requires elaborate method of editing it. &lt;sup id="fnref:7">&lt;a href="#fn:7" class="footnote-ref" role="doc-noteref">7&lt;/a>&lt;/sup>&lt;/p>
+&lt;p>&lt;em>Corosync is simply used for intra-cluster communication, keeping the configurations in sync or indicating to the nodes when inquorate, it does not decide anything beyond that and it certainly was never meant to trigger any reboots.&lt;/em>&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_%28pmxcfs%29" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_(pmxcfs)&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://github.com/corosync/corosync" target="_blank" rel="noopener">https://github.com/corosync/corosync&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://github.com/ClusterLabs/pacemaker" target="_blank" rel="noopener">https://github.com/ClusterLabs/pacemaker&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/High_Availability" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/High_Availability&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:5">
+&lt;p>&lt;a href="https://pve.proxmox.com/pve-docs/pvecm.1.html" target="_blank" rel="noopener">https://pve.proxmox.com/pve-docs/pvecm.1.html&lt;/a>&amp;#160;&lt;a href="#fnref:5" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:6">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/corosync/corosync-quorumtool.8.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/corosync/corosync-quorumtool.8.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:6" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:7">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/Cluster_Manager#_corosync_configuration" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/Cluster_Manager#_corosync_configuration&lt;/a>&amp;#160;&lt;a href="#fnref:7" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>The improved SSH with regressions</title><link>https://free-pmx.github.io/insights/the-improved-ssh-with-regressions/</link><pubDate>Sun, 10 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/the-improved-ssh-with-regressions/</guid><description>
+&lt;p>If you pop into the release notes of PVE 8.2, &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> there&amp;rsquo;s a humble note on changes to SSH behaviour under &lt;em>Improved management for Proxmox VE clusters&lt;/em>:&lt;/p>
+&lt;blockquote>
+&lt;p>Modernize handling of host keys for SSH connections between cluster nodes ([bugreport] 4886).&lt;/p>
+&lt;p>Previously, /etc/ssh/ssh_known_hosts was a symlink to a shared file containing all node hostkeys.
+This could cause problems if conflicting hostkeys appeared in /root/.ssh/known_hosts, for example after re-joining a node to the cluster under its old name.
+Now, each node advertises its own host key over the cluster filesystem. When Proxmox VE initiates an SSH connection from one node to another, it pins the advertised host key.
+For existing clusters, pvecm updatecerts can optionally unmerge the existing /etc/ssh/ssh_known_hosts.&lt;/p>
+&lt;/blockquote>
+&lt;h2>The original bug&lt;span class="hx-absolute -hx-mt-20" id="the-original-bug">&lt;/span>
+&lt;a href="#the-original-bug" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>This is a complete rewrite - of a piece that has been causing endless symptoms since over 10 years &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> manifesting as inexplicable:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
+Offending RSA key in /etc/ssh/ssh_known_hosts&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>This was particularly bad as it concerned &lt;code>pvecm updatecerts&lt;/code> &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup> - the very tool that was supposed to remedy these kinds of situations.&lt;/p>
+&lt;h2>The irrational rationale&lt;span class="hx-absolute -hx-mt-20" id="the-irrational-rationale">&lt;/span>
+&lt;a href="#the-irrational-rationale" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>First, there&amp;rsquo;s the general misinterpretation on how SSH works:&lt;/p>
+&lt;blockquote>
+&lt;p>problems if conflicting hostkeys appeared in /root/.ssh/known_hosts, for example after re-joining a node to the cluster under its old name.&lt;/p>
+&lt;/blockquote>
+&lt;p>&lt;em>Let&amp;rsquo;s establish that the general SSH behaviour is to accept ALL of the possible multiple host keys&lt;/em> that it recognizes for a given host when verifying its identity. &lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup> There&amp;rsquo;s never any issue in having multiple records in &lt;code>known_hosts&lt;/code>, in whichever location, that are &amp;ldquo;conflicting&amp;rdquo; - if ANY of them matches, it WILL connect.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> And one machine, in fact, has multiple host keys that it can present, e.g. RSA and ED25519-based ones.&lt;/p>
+&lt;/blockquote>
+&lt;h2>What was actually fixed&lt;span class="hx-absolute -hx-mt-20" id="what-was-actually-fixed">&lt;/span>
+&lt;a href="#what-was-actually-fixed" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The actual problem at hand was that PVE used to tailor the use of what would be system-wide (not user specific) &lt;code>/etc/ssh/ssh_known_hosts&lt;/code> by making it into a symlink pointing into &lt;code>/etc/pve/priv/known_hosts&lt;/code> - which was shared across the cluster nodes. Within this architecture, it was necessary to be merging any changes from any node performed on this file and in the effort of pruning it - to avoid growing it too large - it was mistakenly removing newly added entries for the same host, i.e. if host was reinstalled with same name, its new host key could never make it to be recognised by the cluster.&lt;/p>
+&lt;p>Because there were additional issues associated with this, e.g. running &lt;code>ssh-keygen -R&lt;/code> would remove such symlink, eventually, instead of fixing the merging, a new approach was chosen.&lt;/p>
+&lt;h2>What has changed&lt;span class="hx-absolute -hx-mt-20" id="what-has-changed">&lt;/span>
+&lt;a href="#what-has-changed" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The new implementation does not rely on shared &lt;code>known_hosts&lt;/code> anymore, in fact it does not even use the local system or user locations to look up the host key to verify. It makes a new entry with a single host key into &lt;code>/etc/pve/local/ssh_known_hosts&lt;/code> which then appears in &lt;code>/etc/pve/&amp;lt;nodename&amp;gt;/&lt;/code> for each respective node and then &lt;em>overrides SSH parameters&lt;/em> during invocation from other nodes with:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>-o UserKnownHosts=&amp;#34;/etc/pve/&amp;lt;nodename&amp;gt;/ssh_known_hosts&amp;#34; -o GlobalKnownHosts=none&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>So this is NOT how you would be typically running your own &lt;code>ssh&lt;/code> sessions, therefore you will experience different behaviour in CLI than before.&lt;/p>
+&lt;h2>What was not fixed&lt;span class="hx-absolute -hx-mt-20" id="what-was-not-fixed">&lt;/span>
+&lt;a href="#what-was-not-fixed" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>The linking and merging of shared &lt;code>ssh_known_hosts&lt;/code>, if still present, is happening with the original bug - despite trivial to fix, regression-free. The not fixed part is the merging, i.e. it will still be &lt;em>silently dropping out your new keys.&lt;/em> Do not rely on it.&lt;/p>
+&lt;h2>Regressions&lt;span class="hx-absolute -hx-mt-20" id="regressions">&lt;/span>
+&lt;a href="#regressions" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>There&amp;rsquo;s some strange behaviours left behind. First of all, even if you create a new cluster from scratch on v8.2, the initiating node will have the symlink created, but none of the subsequently joined nodes will be added there and will not have those symlinks anymore.&lt;/p>
+&lt;p>Then there was the QDevice setup issue, &lt;sup id="fnref:5">&lt;a href="#fn:5" class="footnote-ref" role="doc-noteref">5&lt;/a>&lt;/sup> discovered only by a user, since fixed.&lt;/p>
+&lt;p>Lately, there was the LXC console relaying issue, &lt;sup id="fnref:6">&lt;a href="#fn:6" class="footnote-ref" role="doc-noteref">6&lt;/a>&lt;/sup> also user reported.&lt;/p>
+&lt;h2>The takeaway&lt;span class="hx-absolute -hx-mt-20" id="the-takeaway">&lt;/span>
+&lt;a href="#the-takeaway" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>It is good to check which of your nodes are which PVE versions.&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>pveversion -v | grep -e proxmox-ve: -e pve-cluster:
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>The bug was fixed for &lt;code>pve-cluster: 8.0.6&lt;/code> (not to be confused with &lt;code>proxmox-ve&lt;/code>).&lt;/p>
+&lt;p>Check if you have symlinks present:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>readlink -v /etc/ssh/ssh_known_hosts
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>You either have the symlink present - pointing to the shared location:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>/etc/pve/priv/known_hosts&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Or an actual local file present:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>readlink: /etc/ssh/ssh_known_hosts: Invalid argument&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Or nothing - neither file nor symlink - there at all:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>readlink: /etc/ssh/ssh_known_hosts: No such file or directory&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Consider removing the symlink with the newly provided option:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>pvecm updatecerts --unmerge-known-hosts
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>And removing (with a backup) the local machine-wide file as well:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-console" data-lang="console">&lt;span style="display:flex;">&lt;span>mv /etc/ssh/ssh_known_hosts{,.disabled}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>If you are running own scripting that e.g. depends on SSH being able to successfully verify identity of all current and future nodes, you now need to roll your own solution going forward.&lt;/p>
+&lt;p>Most users would not have noticed except when suddenly being asked to verify authenticity when &amp;ldquo;jumping&amp;rdquo; cluster nodes, something that was previously seamless.&lt;/p>
+&lt;h2>What is not covered here&lt;span class="hx-absolute -hx-mt-20" id="what-is-not-covered-here">&lt;/span>
+&lt;a href="#what-is-not-covered-here" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>This post is meant to highlight the change in default PVE cluster behaviour when it comes to verifying remote hosts against &lt;code>known_hosts&lt;/code> &lt;em>by the connecting clients&lt;/em>. It does NOT cover still present &lt;a href="https://free-pmx.github.io/insights/passwordless-ssh-can-lock-you-out/" >bugs&lt;/a> relating to the use of shared &lt;code>authorized_keys&lt;/code> that are used to authenticate the connecting clients &lt;em>by the remote host&lt;/em>.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/Roadmap#Proxmox_VE_8.2" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/Roadmap#Proxmox_VE_8.2&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://forum.proxmox.com/threads/137809/" target="_blank" rel="noopener">https://forum.proxmox.com/threads/137809/&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://pve.proxmox.com/pve-docs/pvecm.1.html" target="_blank" rel="noopener">https://pve.proxmox.com/pve-docs/pvecm.1.html&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/openssh-server/sshd.8.en.html#SSH_KNOWN_HOSTS_FILE_FORMAT" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/openssh-server/sshd.8.en.html#SSH_KNOWN_HOSTS_FILE_FORMAT&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:5">
+&lt;p>&lt;a href="https://bugzilla.proxmox.com/show_bug.cgi?id=5461" target="_blank" rel="noopener">https://bugzilla.proxmox.com/show_bug.cgi?id=5461&lt;/a>&amp;#160;&lt;a href="#fnref:5" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:6">
+&lt;p>&lt;a href="https://lists.proxmox.com/pipermail/pve-devel/2024-October/065853.html" target="_blank" rel="noopener">https://lists.proxmox.com/pipermail/pve-devel/2024-October/065853.html&lt;/a>&amp;#160;&lt;a href="#fnref:6" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>Passwordless SSH can lock you out</title><link>https://free-pmx.github.io/insights/passwordless-ssh-can-lock-you-out/</link><pubDate>Fri, 08 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/passwordless-ssh-can-lock-you-out/</guid><description>
+&lt;p>If you follow standard security practices, you would not allow &lt;code>root&lt;/code> logins, let alone connections over SSH (as with &lt;em>Debian&lt;/em> standard install). But this would deem your PVE unable to function properly, so you can only resort to fix your &lt;code>/etc/ssh/sshd_config&lt;/code> &lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> with the option:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>PermitRootLogin prohibit-password&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>That way, you only allow connections with valid keys (not password). Prior to this, you would have copied over your public keys with &lt;code>ssh-copy-id&lt;/code> &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup> or otherwise add them to &lt;code>/root/.ssh/authorized_keys&lt;/code>.&lt;/p>
+&lt;p>But this has a &lt;em>huge caveat&lt;/em> on any standard PVE install. When you examine the file, it is actually a symbolic link:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>/root/.ssh/authorized_keys -&amp;gt; /etc/pve/priv/authorized_keys&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>This is because there&amp;rsquo;s already other nodes&amp;rsquo; keys there to allow for cross-connecting - and the location is shared. This has several issues, most important of which is that the actual file lies in &lt;code>/etc/pve&lt;/code> which is a virtual filesystem &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup> mounted only when all goes well during boot-up.&lt;/p>
+&lt;h2>What could go wrong&lt;span class="hx-absolute -hx-mt-20" id="what-could-go-wrong">&lt;/span>
+&lt;a href="#what-could-go-wrong" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>If your &lt;code>/etc/pve&lt;/code> does not get mounted during bootup, your node will appear offline and will not be accessible over SSH, let alone GUI.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> If accessing via other node&amp;rsquo;s GUI, you will get confusing &lt;code>Permission denied (publickey,password)&lt;/code> in the &amp;ldquo;Shell&amp;rdquo;.&lt;/p>
+&lt;/blockquote>
+&lt;p>You are essentially locked-out, despite the system otherwise booted up except for PVE services. You cannot troubleshoot over SSH, you would need to resort to OOB management or physical access.&lt;/p>
+&lt;p>This is because during your SSH connection, there&amp;rsquo;s no way to verify your key against the &lt;code>/etc/pve/priv/authorized_keys&lt;/code>.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> If you allow root to authenticate also by password, it will lock you out of &amp;ldquo;GUI only&amp;rdquo;. Your SSH will not work - obviously - with key, but fallback to password prompt.&lt;/p>
+&lt;/blockquote>
+&lt;h2>How to avoid this&lt;span class="hx-absolute -hx-mt-20" id="how-to-avoid-this">&lt;/span>
+&lt;a href="#how-to-avoid-this" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>You need to use your own &lt;code>authorized_keys&lt;/code>, different from the default that has been hijacked by PVE. The proper way to do this is define its location in the config:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>cat &amp;gt; /etc/ssh/sshd_config.d/LocalAuthorizedKeys.conf &amp;lt;&amp;lt;&amp;lt; &amp;#34;AuthorizedKeysFile .ssh/local_authorized_keys&amp;#34;&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>If you now copy your own keys to &lt;code>/root/.ssh/local_authorized_keys&lt;/code> file (on every node), you are immune from this design flaw.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> There are even better ways to approach this, e.g. SSH certificates, in which case you are not prone to encounter this bug for your own setup. This is out of scope for this post.&lt;/p>
+&lt;/blockquote>
+&lt;h2>FAQ&lt;span class="hx-absolute -hx-mt-20" id="faq">&lt;/span>
+&lt;a href="#faq" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ol>
+&lt;li>&lt;strong>What about non-privileged user &amp;amp; sudo?&lt;/strong>&lt;/li>
+&lt;/ol>
+&lt;p>This will work just fine, too. Note that PVE does not come with &lt;code>sudo&lt;/code> and will nevertheless require &lt;code>root&lt;/code> allowed to login over SSH to preserve full features.&lt;/p>
+&lt;ol start="2">
+&lt;li>&lt;strong>Why is this considered a design flaw?&lt;/strong>&lt;/li>
+&lt;/ol>
+&lt;p>Due to the Proxmox stack setup, inaccessible SSH for &lt;code>root&lt;/code> user prevents you to e.g. troubleshoot failing services (when SSH is healthy) even from GUI shell of a healthy node. It is &lt;em>impossible&lt;/em> to remove SSH access for &lt;code>root&lt;/code> account in Proxmox without &lt;em>losing features&lt;/em>, some of which are &lt;a href="https://pve.proxmox.com/wiki/Cluster_Manager#_role_of_ssh_in_proxmox_ve_clusters" target="_blank" rel="noopener">documented&lt;/a>.&lt;/p>
+&lt;p>Since you cannot disable &lt;code>root&lt;/code> over SSH, you might as well embrace it, however if you have another way in through other steps (e.g. FAQ 1), it is just as good (the GUI path will still not work though).&lt;/p>
+&lt;ol start="3">
+&lt;li>&lt;strong>The incidence ratio of system &amp;ldquo;down&amp;rdquo; (but has full networking) vs &amp;ldquo;down down&amp;rdquo; (when it need to rescue from console / kvm) seems low.&lt;/strong>&lt;/li>
+&lt;/ol>
+&lt;p>The issue is that failure of &lt;code>pve-cluster&lt;/code> service at boot (which needs to run also on standalone nodes) that causes the &amp;ldquo;lockout&amp;rdquo; is quite common side effect of e.g. networking misconfiguration or &lt;em>pmxcfs&lt;/em> backend-database corruption. They are out of scope of this post, but happen definitely more often than just failing SSH, let alone networking as a whole. Also note that lots of home systems do not have OOB/KVM or even rely entirely on GUI.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/openssh-server/sshd_config.5.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/openssh-server/sshd_config.5.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a href="https://manpages.debian.org/bookworm/openssh-client/ssh-copy-id.1.en.html" target="_blank" rel="noopener">https://manpages.debian.org/bookworm/openssh-client/ssh-copy-id.1.en.html&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a href="https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_%28pmxcfs%29" target="_blank" rel="noopener">https://pve.proxmox.com/wiki/Proxmox_Cluster_File_System_(pmxcfs)&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>Why Proxmox VE shreds your SSDs</title><link>https://free-pmx.github.io/insights/why-proxmox-ve-shreds-your-ssds/</link><pubDate>Sun, 03 Nov 2024 00:00:00 +0000</pubDate><guid>https://free-pmx.github.io/insights/why-proxmox-ve-shreds-your-ssds/</guid><description>
+&lt;p>You must have read, at least once, that Proxmox recommend &amp;ldquo;enterprise&amp;rdquo; SSDs for their virtualisation stack. But why does it shred regular SSDs? It would not have to, in fact the modern ones, even without PLP, can endure as much as 2,000 TBW per life. But where do the writes come from? ZFS? Let&amp;rsquo;s have a look.&lt;/p>
+&lt;p>&lt;em>The below is particularly of interest for any homelab user, but in fact everyone who cares about wasted system performance might be interested.&lt;/em>&lt;/p>
+&lt;p>If you have a cluster, you can actually safely follow this experiment. Add a new &amp;ldquo;probe&amp;rdquo; node that you will later dispose of and let it join the cluster. On the &amp;ldquo;probe&amp;rdquo; node, let&amp;rsquo;s isolate the configuration state backend database onto a separate filesystem, to be able to benchmark only &lt;em>pmxcfs&lt;/em> - the virtual filesystem that is mounted to &lt;code>/etc/pve&lt;/code> and holds your configuration files, i.e. cluster state.&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>dd if=/dev/zero of=/root/pmxcfsbd bs=1M count=256
+mkfs.ext4 /root/pmxcfsbd
+systemctl stop pve-cluster
+cp /var/lib/pve-cluster/config.db /root/
+mount -o loop /root/pmxcfsbd /var/lib/pve-cluster&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>This creates a separate loop device, sufficiently large, shuts down the service issuing writes to the backend database and copies it out of its original location before mounting the blank device over the original path where the service will look for it again.&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code># lsblk
+NAME MAJ:MIN RM SIZE RO TYPE MOUNTPOINTS
+loop0 7:0 0 256M 0 loop /var/lib/pve-cluster&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>Now copy the backend database onto the dedicated - so far blank - loop device and restart the service.&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>cp /root/config.db /var/lib/pve-cluster/
+systemctl start pve-cluster.service
+systemctl status pve-cluster.service&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>If all went well, your service is up and running and issuing its database writes onto separate loop device.&lt;/p>
+&lt;p>From now on, you can measure the writes occurring solely there:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>vmstat -d&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>You are interested in the loop device, in my case &lt;code>loop0&lt;/code>, wait some time, e.g. an hour, and list the same again:&lt;/p>
+&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;pre>&lt;code>disk- ------------reads------------ ------------writes----------- -----IO------
+total merged sectors ms total merged sectors ms cur sec
+loop0 1360 0 6992 96 3326 0 124180 16645 0 17&lt;/code>&lt;/pre>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>I did my test with different configurations, &lt;em>all idle&lt;/em>:&lt;/p>
+&lt;ul>
+&lt;li>single node (no cluster);&lt;/li>
+&lt;li>2-nodes cluster;&lt;/li>
+&lt;li>5-nodes cluster.&lt;/li>
+&lt;/ul>
+&lt;p>The rate of writes on these otherwise &lt;em>freshly installed and idle (zero guests)&lt;/em> systems is impressive:&lt;/p>
+&lt;ul>
+&lt;li>single ~ 1,000 sectors / minute writes&lt;/li>
+&lt;li>2-nodes ~ 2,000 sectors / minute writes&lt;/li>
+&lt;li>5-nodes ~ 5,000 sectors / minute writes&lt;/li>
+&lt;/ul>
+&lt;p>But this is &lt;em>not&lt;/em> real life scenario, in fact, these are bare minimums and in the wild, the growth is NOT LINEAR at all, it will depend on e.g. number of HA services running and frequency of migrations.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>NOTE&lt;/strong> These measurements are filesystem-agnostic, so if your root is e.g. installed on ZFS, you would need to &lt;em>multiply&lt;/em> the numbers by the amplifation of the filesystem on top.&lt;/p>
+&lt;/blockquote>
+&lt;p>But suffice to say, even just the idle writes amount to minimum ~ 0.5TB per year for single-node, or 2.5TB (on each node) with a 5-node cluster.&lt;/p>
+&lt;p>&lt;strong>Consider that in my case at the least (no migrations, no config changes - no guests after all), almost none of this data needs to be hitting the block layer.&lt;/strong>&lt;/p>
+&lt;p>That&amp;rsquo;s right, these are completely avoidable writes wasting out your filesystem performance. If it&amp;rsquo;s a homelab, you probably care about shredding your SSDs endurance prematurely. In any environment, this increases risk of data loss during power failure as the backend might come back up corrupt.&lt;/p>
+&lt;p>And these are just configuration state related writes, nothing to do with your guests writing onto their block layer. But then again, there were &lt;em>no state changes&lt;/em> in my test scenarios.&lt;/p>
+&lt;p>So in a nutshell, consider that deploying clusters takes its toll and account for factor of the above quoted numbers due to actual filesystem amplifications and real files being written in operational environment.&lt;/p></description></item></channel></rss>
