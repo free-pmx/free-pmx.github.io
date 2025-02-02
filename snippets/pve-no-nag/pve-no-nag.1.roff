@@ -1,0 +1,64 @@
+.\" DISPLAY: $ man ./pve-no-nag.1.roff
+.\" INSTALL: # gzip -c pve-no-nag.1.roff > /usr/share/man/man1/pve-no-nag.1.gz
+.\" ---8<--- ROFF DOCUMENT BELOW
+.TH PVE-NO-NAG 1
+.SH NAME
+.PP
+pve-no-nag.pl - Proxmox VE no-subscription popup removal tool
+
+.SH  SYNOPSIS
+.B pve-no-nag.pl
+.RI [ FILE ]...
+
+.SH DESCRIPTION
+.PP
+Searches and replaces entire offending piece of code in-place.
+.PP
+With no FILE, or when FILE is -, read standard input.
+
+.SH EXAMPLES
+
+.TP
+.B APPLY
+Patch the library at its usual installation path.
+
+.B #
+perl pve-no-nag.pl /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+
+.I NOTE
+No execute permissions necessary on the
+.I .pl
+script file.
+
+.TP
+.B CHECK
+Compare the applied changes against the retained copy of the original.
+
+.B $
+diff -u /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js{.bak,}
+
+.TP
+.B UNDO
+Revert the modification by reinstalling the original component.
+
+.B #
+apt reinstall proxmox-widget-toolkit
+
+.SH NOTES
+
+Always creates a backup copy of the original into a
+.I .bak
+file.
+
+.SH BUGS
+
+Bugs can be reported at free-pmx GitHub repository <https://github.com/free-pmx/>.
+
+.SH LICENSE
+
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+
+This is free software: you are free to change and redistribute it.
+
+There is NO WARRANTY, to the extent permitted by law.
+
