@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /images/
+Disallow: /snippets/
+
+Sitemap: https://free-pmx.github.io/sitemap.xml
